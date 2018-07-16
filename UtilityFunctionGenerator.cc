@@ -40,6 +40,7 @@ SOFTWARE.
 
 //For Ns3 Ipv4 packets, conditional compile may be necessary
 #include "ns3/ForwardNs3Ipv4Manager.h"
+#include "ns3/ForwardNs3Ipv4ManagerF2.h"
 
 UtilityGenerator::UtilityGenerator ()
 {
@@ -174,6 +175,10 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
  else if (!name.compare (ForwardNs3Ipv4Manager::IdName ()))
    {
       return new ForwardNs3Ipv4Manager (config);
+  }
+ else if (!name.compare (ForwardNs3Ipv4ManagerF2::IdName ()))
+   {
+      return new ForwardNs3Ipv4ManagerF2 (config);
   }
   else
     {
