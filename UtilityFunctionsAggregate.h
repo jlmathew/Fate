@@ -54,6 +54,37 @@ class UtilityExternalModule;
 #include "UtilityFunctionGenerator.h"
 #include "RangeData.h"
 
+//this is for decision making between multiple options, e.g. forwarding
+//each decision branch is created as a normal utility, then 'mux'
+class UtilityMux : public UtilityAggregateBase
+{
+   public:
+   UtilityMux (ConfigWrapper &config);
+   virtual ~UtilityMux();
+   static const std::string &IdName(void)
+   {
+      static const std::string idName("MUX");
+      return idName;
+   }
+   double GetLastEval() const;
+   std::string  GetLastIndex() const;
+   SetUtilityEval(const std::string &name, UtilityHandlerBase *utilityEvals );
+   SetUtilityEval(const std::string &name, ConfigWrapper &config );
+   UtilityHandlerBase * GetUtilityEval(const std::string &name);
+   void SetComparator(void *);  //how to compare, with doubles
+   void DelUtilityEval(const std::string &name);
+   void ComputeAndValue(const std::string &name, std::list < PktType> &pktList);   //void Print(std::ostream &os, const AcclContentName &tlvName, double &value, std::string &nameIndex); 
+   //double FunctionValue(double param1) const;
+   //double FunctionValue(double param1,param2) const;
+   std::tuple<std::string, double> ValueAndIndex(const AcclContentName &name) const;
+   private:
+     void ComputeAndValue(std::list < PktType> &pktList) { assert(0);} 
+     double Value(const AcclContentName &name) const { assert(0);}
+
+     double m_lastEvalValue;
+     std::string m_lastEvalName;
+};
+
 class UtilityMax:public UtilityAggregateBase
 {
 

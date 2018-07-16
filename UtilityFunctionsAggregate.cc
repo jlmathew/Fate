@@ -364,4 +364,31 @@ UtilityMax::FunctionValue (double a1, double a2) const
 
 //add if/then/else
 //add switch/case
+/*UtilityIfThenElse::UtilityIfThenElse(ConfigWrapper &config):
+UtilityAggregateBase(config)
+{
+  std::string tmpName = IdName();
+  tmpName.append(m_name);
+  m_name = tmpeName;
+}
 
+UtilityIfThenElse::~UtilityIfThenElse()
+{
+}
+
+double
+UtilityIfThenElse::FunctionValue(double a1, double a2, double a3) const
+{
+   
+}
+
+double
+UtilityIfThenElse::FunctionValue(double, double a2) const
+{
+   
+  if (m_watermarkRange.IsInRange (a1))
+  {
+    return a2;
+  }
+}
+*/
