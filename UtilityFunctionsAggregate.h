@@ -56,7 +56,7 @@ class UtilityExternalModule;
 
 //this is for decision making between multiple options, e.g. forwarding
 //each decision branch is created as a normal utility, then 'mux'
-class UtilityMux : public UtilityAggregateBase
+/*class UtilityMux : public UtilityAggregateBase
 {
    public:
    UtilityMux (ConfigWrapper &config);
@@ -84,7 +84,7 @@ class UtilityMux : public UtilityAggregateBase
      double m_lastEvalValue;
      std::string m_lastEvalName;
 };
-
+*/
 class UtilityMax:public UtilityAggregateBase
 {
 
