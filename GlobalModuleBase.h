@@ -125,7 +125,7 @@ public:
   void SetGlobalLog (const std::string & name, GlobalModuleLog *);
 
 
-
+void *dnsEntry; //fix to make generic, not ns3 specific
 
 private:
     GlobalModuleTimer * m_timer;
