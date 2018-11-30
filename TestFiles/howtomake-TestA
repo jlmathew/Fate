@@ -1,1 +1,1 @@
-g++ -std=c++11 -g -I. -I../ns3 ../*.cc  ./TestA.cpp ../ns3/ForwardNs3Ipv4Manager.cc
+g++ -std=c++11 -g -I. -I../ns3 ../*.cc  ./TestA.cpp ../ForwardIpv4Manager.cc
