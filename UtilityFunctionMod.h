@@ -50,7 +50,7 @@ SOFTWARE.
 #include "BaseStorage.h"
 #include "PacketTypeBase.h"
 #include "RangeData.h"
-
+#include "NormalizeValue.h"
 
 //TODO JLM absolute and relative lifetime
 class UtilityFresh : public UtilityHandlerBase
@@ -98,6 +98,7 @@ private:
 
 //add TTL (countdown), compare by range.   Use double, not uint64_t
 //should work as TTL, or move (up/down) to other caches towards source.
+
 class UtilityCnt : public UtilityHandlerBase
 {
 public:
@@ -139,6 +140,8 @@ private:
   uint64_t m_lowerBound;
   uint64_t m_upperBound;
   class StorageClass < AcclContentName, bool > *m_scratchpad;
+  NormalRanked<uint64_t> *m_normalize;
+  
 };
 
 //used to trace a route

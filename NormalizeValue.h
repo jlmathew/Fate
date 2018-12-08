@@ -57,50 +57,59 @@ class Normalize
     {
        m_values.clear();
     }
-    InsertValue(T a)
+    void InsertValue(T a)
     {
        m_values.insert(a);
     }
-    InsertNearFirstValue(T a)
+    void InsertNearFirstValue(T a)  //for always first inserts
     {
        m_values.insert(m_values.begin(),a);
     }
-    InsertNearLastValue(T a)
+    void InsertNearLastValue(T a)  //for always last inserts, like time()
     {
        m_values.insert(m_values.rbegin(),a);
     }
 
-    DeleteValue(T a)
+    bool DeleteValue(T a)
     {
 	std::multiset<t>::iterator it;
 	it = m_values.find(a);
 	if (it != m_values.end())
+        {
            m_values.erase(it);
+           return true;
+        } else {
+            return false
+        }
     }
    
-    double EvaluateValue(T);
+    double EvaluateValue(T) {
+        throw "Invalid Evaluate in BaseClass";
+    }
   private:
     std::multiset<T>::m_values;
     T GetMinimum();
     T GetMaximum();
 };
 
-Template <B, T>
+//evaluate if B in range (A,C)
+//used for impulse or QoS value matching
+Template <T>
 class NormalMatch : public Normalize<T>
 {
     NormalMatch();
     ~NormalMatch();
     //dont need to track all values
     InsertValue(uint64_T a) {};
-    InsertNearFirstValue(B a) {};
-    InsertNearLastValue(B a) {};
+    InsertNearFirstValue(T a) {};
+    InsertNearLastValue(T a) {};
     DeleteValue(B a) {};
     
     MatchValue(const RangeData &match)
     {
         m_data=match;
     }
-    double EvaluateValue(B val)
+    double EvaluateValue(T val)
     {
        if (m_data.InRange(val)) {
            return 1.0;
@@ -108,20 +117,21 @@ class NormalMatch : public Normalize<T>
 	   return 0.0;
     }
 	private:
-    RangeData<B> m_data;
+    RangeData<T> m_data;
 };
 
-Template <B, T>
+//normalized from lowest to highest value; 0.0 .33, .5, .8 1.0
+Template <T>
 class NormalRanked : public Normalized<T>
 {
-    NormalRanked();
-    ~NormalRanked();
-    double EvaluateValue(B val) 
+    NormalRanked() {}
+    ~NormalRanked() {}
+    double EvaluateValue(T val) 
     {
 	if (m_data.empty())
 		return 0.0;
-        B min = *m_data.cbegin(); //need something better
-	B max = *m_data.crbegin();
+        T min = *m_data.cbegin(); //need something better?
+	T max = *m_data.crbegin();
 	if (min == max)
 		return 1.0;
 	return (double) (val-min)/(max-min);
@@ -129,5 +139,11 @@ class NormalRanked : public Normalized<T>
     }
 };
 
+//step normalized from 0 to 1 (0, .33, .66, 1.0)
+class stepRanked: public Normalized<T>
+{
+    
+    
+};
 //class StepRanked (even parsing)
 #endif

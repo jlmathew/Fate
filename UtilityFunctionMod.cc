@@ -251,6 +251,7 @@ UtilityCnt::OnPktIngress (PktType & data)
   bool countExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
   if (countExists) {
      Condition(value);
+     m_normalize->insert(value);
      if (m_validRange.IsInRange(value)) { //in not in range
       //data.SetUnsignedNamedAttribute(m_defaultAttribute, value); //dont write if criteria is met, otherwise it may go out of bounds!
       m_scratchpad->SetData (data.GetAcclName (), true);
@@ -269,20 +270,23 @@ UtilityCnt::OnPktIngress (PktType & data)
 double
 UtilityCnt::Value (const AcclContentName & name) const
 {
-  //timer_struct_t time; //expiration time
-  bool cntMet;
-  bool exists = m_scratchpad->ExistData (name, cntMet);
+
+   uint64_t value=0;
+  bool exists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value); 
+
   if (!exists)
     {
       return m_defaultMissingReturnValue;
     }                      //send default value
 
-   //check if content is stale (not fresh)
+
   if (cntMet) {
       return 1.0;
   } else {
       return 0.0 ;
     }
+  
+  return m_normalize->EvaluateValue(value);
 }
 
 uint64_t
@@ -293,8 +297,13 @@ UtilityCnt::EstMemoryUsed (void)
 
 void
 UtilityCnt::DoDelete (const AcclContentName & name)
-{
-  m_scratchpad->EraseData (name);
+{ 
+   uint64_t value=0;
+  bool countExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
+  if (countExists) { 
+      m_scratchpad->EraseData (name);
+      m_normalize->erase(value);
+  }
 }
 
 //match range - need to be int?
