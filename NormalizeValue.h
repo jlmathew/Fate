@@ -47,16 +47,42 @@ SOFTWARE.
 #include <map>
 #include <set>
 #include "RangeData.h"
+#include <stdexcept>
 
-Template<class T>
+template<class T>
 class Normalize
 {
   public:
-    Normalize() {}
+    Normalize() {
+    }
     ~Normalize() 
     {
-       m_values.clear();
     }
+    void InsertValue(T a)
+    {
+    }
+    void InsertNearFirstValue(T a)  //for always first inserts
+    {
+    }
+    void InsertNearLastValue(T a)  //for always last inserts, like time()
+    {
+    }
+
+    bool DeleteValue(T a)
+    {
+    }
+   
+    double EvaluateValue(T) {
+    }
+};
+
+template<class T>
+class NormalizeValue : public Normalize<T>
+{
+  public:
+    NormalizeValue() {}
+    ~NormalizeValue() 
+    { m_values.clear();}
     void InsertValue(T a)
     {
        m_values.insert(a);
@@ -72,40 +98,37 @@ class Normalize
 
     bool DeleteValue(T a)
     {
-	std::multiset<t>::iterator it;
+typename std::multiset<T>::iterator it;
 	it = m_values.find(a);
 	if (it != m_values.end())
         {
            m_values.erase(it);
            return true;
         } else {
-            return false
+            return false;
         }
     }
    
     double EvaluateValue(T) {
-        throw "Invalid Evaluate in BaseClass";
     }
-  private:
-    std::multiset<T>::m_values;
+  protected:
+    std::multiset<T> m_values;
     T GetMinimum();
     T GetMaximum();
 };
 
-//evaluate if B in range (A,C)
+//evaluate if RangeData in range (A,C)
 //used for impulse or QoS value matching
-Template <T>
+template <class T>
 class NormalMatch : public Normalize<T>
 {
-    NormalMatch();
-    ~NormalMatch();
-    //dont need to track all values
-    InsertValue(uint64_T a) {};
-    InsertNearFirstValue(T a) {};
-    InsertNearLastValue(T a) {};
-    DeleteValue(B a) {};
+  public: 
+    NormalMatch() {}
+    ~NormalMatch() {}
     
-    MatchValue(const RangeData &match)
+
+    void
+    InsertMatchValue(const RangeData<T> &match)
     {
         m_data=match;
     }
@@ -116,22 +139,46 @@ class NormalMatch : public Normalize<T>
        } else 
 	   return 0.0;
     }
-	private:
+
+  private:
     RangeData<T> m_data;
 };
 
-//normalized from lowest to highest value; 0.0 .33, .5, .8 1.0
-Template <T>
-class NormalRanked : public Normalized<T>
+template <class T>
+class GeometricRanked : public Normalize<T>
 {
+	public:
+    GeometricRanked(): m_invert(false)
+      	{};
+    ~GeometricRanked() {};
+    void SetInvert(bool inv) { m_invert = inv;}
+
+    double EvaluateValue(T val)
+    {
+       double ret = 1.0;
+       if (val != 0.0) {ret = 1.0/val;}
+       if (m_invert) {
+          ret = 1.0-ret;
+       } 
+       return ret;
+    }
+	private:
+    bool m_invert;
+};
+
+//normalized from lowest to highest value; 0.0 .33, .5, .8 1.0
+template <class T>
+class NormalRanked : public NormalizeValue<T>
+{
+	public:
     NormalRanked() {}
-    ~NormalRanked() {}
+    ~NormalRanked() { }
     double EvaluateValue(T val) 
     {
-	if (m_data.empty())
+	if (this->m_values.empty())
 		return 0.0;
-        T min = *m_data.cbegin(); //need something better?
-	T max = *m_data.crbegin();
+        T min = *(this->m_values).cbegin(); //need something better?
+	T max = *(this->m_values).crbegin();
 	if (min == max)
 		return 1.0;
 	return (double) (val-min)/(max-min);
@@ -139,10 +186,20 @@ class NormalRanked : public Normalized<T>
     }
 };
 
+
 //step normalized from 0 to 1 (0, .33, .66, 1.0)
-class stepRanked: public Normalized<T>
+template <class T>
+class StepRanked: public NormalizeValue<T>
 {
-    
+	public:
+   StepRanked() {}
+   ~StepRanked() { } 
+
+    double EvaluateValue(T val) 
+    {
+std::invalid_argument( "received negative value" );
+    }
+
     
 };
 //class StepRanked (even parsing)
