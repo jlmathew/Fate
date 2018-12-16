@@ -134,7 +134,7 @@ class NormalMatch : public Normalize<T>
     }
     double EvaluateValue(T val)
     {
-       if (m_data.InRange(val)) {
+       if (m_data.IsInRange(val)) {
            return 1.0;
        } else 
 	   return 0.0;
@@ -171,19 +171,28 @@ template <class T>
 class NormalRanked : public NormalizeValue<T>
 {
 	public:
-    NormalRanked() {}
+    NormalRanked(): m_allowZero(true) {}
     ~NormalRanked() { }
     double EvaluateValue(T val) 
     {
+	    //should we check if the provided value exists?
+	    //if not exist, should we throw an exception
+	    //TODO add flag to check if values exists, and if not, throw exception
 	if (this->m_values.empty())
 		return 0.0;
         T min = *(this->m_values).cbegin(); //need something better?
 	T max = *(this->m_values).crbegin();
 	if (min == max)
 		return 1.0;
-	return (double) (val-min)/(max-min);
-
+	if (m_allowZero) {
+	  return (double) (val-min)/(max-min);
+	} else { //avoid having zero as a result
+	  return (double) (val-min+1)/(max-min+1);
+        }
     }
+    void AllowZeroValues(bool val) { m_allowZero = val; }
+	private:
+    bool m_allowZero;
 };
 
 
