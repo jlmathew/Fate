@@ -120,6 +120,8 @@ typename std::multiset<T>::iterator it;
     }
    
     double EvaluateValue(T) {
+ throw std::invalid_argument( "received negative value" );
+	    return 0.0;
     }
       static const dataNameType_t & IdName (void)
   {
@@ -244,7 +246,8 @@ class StepRanked: public NormalizeValue<T>
 
     double EvaluateValue(T val) 
     {
-std::invalid_argument( "received negative value" );
+ throw std::invalid_argument( "received negative value" );
+ return 0.0;
     }
 
     
