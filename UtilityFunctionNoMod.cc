@@ -33,7 +33,6 @@ SOFTWARE.
 #include "RangeData.h"
 
 
-
 bool
 sort_lru (const std::pair < dataNameType_t, LruData > &left, const std::pair < dataNameType_t, LruData > &right)
 {

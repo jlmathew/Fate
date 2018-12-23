@@ -251,7 +251,7 @@ UtilityCnt::OnPktIngress (PktType & data)
   bool countExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
   if (countExists) {
      Condition(value);
-     m_normalize->insert(value);
+     m_normalize->InsertValue(value);
      if (m_validRange.IsInRange(value)) { //in not in range
       //data.SetUnsignedNamedAttribute(m_defaultAttribute, value); //dont write if criteria is met, otherwise it may go out of bounds!
       m_scratchpad->SetData (data.GetAcclName (), true);
@@ -279,7 +279,7 @@ UtilityCnt::Value (const AcclContentName & name) const
       return m_defaultMissingReturnValue;
     }                      //send default value
 
-
+  bool cntMet = m_validRange.IsInRange(value)
   if (cntMet) {
       return 1.0;
   } else {
