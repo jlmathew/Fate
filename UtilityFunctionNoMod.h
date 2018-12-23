@@ -49,6 +49,7 @@ SOFTWARE.
 #include "UtilityConfigBase.h"
 #include "BaseStorage.h"
 #include "PacketTypeBase.h"
+#include "NormalizeValue.h"
 
 //LRU specific data
 class LruData
@@ -402,7 +403,32 @@ private:
 //add positional (gps) value (source, current, destination)
 //add power (battery) value
 //Congestion (forwarding), network speed, reliability (errorness), phy security properties (fiber, copper, air)
+class UtilityU32ValuationEval : public UtilityHandlerBase
+{
+public:
+  UtilityU32ValuationEval();
+  UtilityU32ValuationEval(ConfigWrapper &config);
+  ~UtilityU32ValuationEval();
+  virtual void OnPktIngress (PktType & pkt, const PktTxStatus & status);
 
+  virtual void DoDelete (const AcclContentName & name);
 
+  virtual void Config (ConfigWrapper & config);
+
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("NormalizedEval");
+      return idName;
+  }
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void) const;
+
+private:
+  class StorageClass < dataNameType_t, uint32_t >*m_scratchpad;
+  class Normalize<uint32_t> *m_normalize;
+
+};
 
 #endif

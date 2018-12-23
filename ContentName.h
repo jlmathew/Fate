@@ -34,16 +34,9 @@ SOFTWARE.
 #include<string>
 #include "IcnName.h"
 
-typedef
-  std::string
-  dataNameType_t;
-typedef
-  IcnName <
-  std::string >
-  ContentName;
+typedef std::string dataNameType_t;
+typedef IcnName < std::string > ContentName;
 
-typedef
-  dataNameType_t
-  AcclContentName;
+typedef dataNameType_t AcclContentName;
 
 #endif

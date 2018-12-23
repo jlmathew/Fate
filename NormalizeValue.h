@@ -48,6 +48,7 @@ SOFTWARE.
 #include <set>
 #include "RangeData.h"
 #include <stdexcept>
+#include "ContentName.h"
 
 template<class T>
 class Normalize
@@ -70,10 +71,18 @@ class Normalize
 
     bool DeleteValue(T a)
     {
+	    return true;
     }
    
     double EvaluateValue(T) {
+	    return 0.0;
     }
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("Normalized");
+      return idName;
+  }
+
 };
 
 template<class T>
@@ -100,17 +109,24 @@ class NormalizeValue : public Normalize<T>
     {
 typename std::multiset<T>::iterator it;
 	it = m_values.find(a);
+	bool ret = true;
 	if (it != m_values.end())
         {
            m_values.erase(it);
-           return true;
         } else {
-            return false;
+            ret=false;
         }
+	return ret;
     }
    
     double EvaluateValue(T) {
     }
+      static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("NormalizeValue");
+      return idName;
+  }
+
   protected:
     std::multiset<T> m_values;
     T GetMinimum();
@@ -139,6 +155,11 @@ class NormalMatch : public Normalize<T>
        } else 
 	   return 0.0;
     }
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("NormalMatch");
+      return idName;
+  }
 
   private:
     RangeData<T> m_data;
@@ -162,6 +183,12 @@ class GeometricRanked : public Normalize<T>
        } 
        return ret;
     }
+      static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("GeometricMatch");
+      return idName;
+  }
+
 	private:
     bool m_invert;
 };
@@ -172,7 +199,7 @@ class NormalRanked : public NormalizeValue<T>
 {
 	public:
     NormalRanked(): m_allowZero(true) {}
-    ~NormalRanked() { }
+    virtual ~NormalRanked() { }
     double EvaluateValue(T val) 
     {
 	    //should we check if the provided value exists?
@@ -190,6 +217,12 @@ class NormalRanked : public NormalizeValue<T>
 	  return (double) (val-min+1)/(max-min+1);
         }
     }
+      static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("NormalRanked");
+      return idName;
+  }
+
     void AllowZeroValues(bool val) { m_allowZero = val; }
 	private:
     bool m_allowZero;
@@ -203,6 +236,11 @@ class StepRanked: public NormalizeValue<T>
 	public:
    StepRanked() {}
    ~StepRanked() { } 
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("StepRanked");
+      return idName;
+  }
 
     double EvaluateValue(T val) 
     {

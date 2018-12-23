@@ -1086,6 +1086,7 @@ UtilityLru::SelfTest()
 }
 
 //match name
+//Change match value to regex match value
 UtilityNameAttrMatch::UtilityNameAttrMatch ()
   : m_modValue(1)
   , m_modMatchLow(1)
@@ -1616,4 +1617,51 @@ UtilityEgressCount::EstMemoryUsed (void) const
 {
   return m_scratchpad->size ();       
 }
+
+
+UtilityU32ValuationEval::UtilityValuationEval(): m_normalize(nullptr) {}
+UtilityU32ValuationEval::UtilityValuationEval(ConfigWrapper &config) : m_normalize(nullptr) {
+    Config(config);
+}
+UtilityU32ValuationEval::~UtilityValuationEval() {}
+   void UtilityValuationEval::OnPktIngress (PktType &data) {
+	   std::string strVal;
+   bool attribExists = data.GetNamedAttribute (m_defaultAttribute, strVal);
+   if (attribExists) {
+      
+   }
+}
+
+   void UtilityU32ValuationEval::DoDelete (const AcclContentName & name) {
+      uint64_t retValue;
+      bool exist = m_scratchpad->ExistData (name, retValue);
+      if (exist) {
+         m_scratchpad->EraseData(name); 
+         if (m_normalize) {
+	    m_normalize->DeleteValue(retValue);
+	 }
+      }
+  }
+
+   void UtilityU32ValuationEval::Config (ConfigWrapper & config) {
+      UtilityHandlerBase::Config(xmlConfig);
+  	if (!m_useAlias)
+    	{
+      	m_name = IdName ();
+    	}
+   
+   }
+   double  UtilityU32ValuationEval::Value (const AcclContentName & name) const {
+     uint64_t retValue;
+      bool exist = m_scratchpad->ExistData (name, retValue);
+      if (exist) {
+	    m_normalize->EvaluateValue(retValue);
+      } else { //data not found!
+          return m_defaultValue;
+      }
+
+  
+  }
+
+   uint64_t UtilityU32ValuationEval::EstMemoryUsed (void) const { return 0;}
 

@@ -46,10 +46,10 @@ int main()
     sr.InsertValue(5);
     sr.InsertValue(2);
     sr.InsertValue(7);
-    std::cout << "Expect 1, received " << sr.Evaluate(10) << "\n";
-    std::cout << "Expect 0.8, received " << sr.Evaluate(7) << "\n";
-    std::cout << "Expect 0.6, received " << sr.Evaluate(5) << "\n";
-    std::cout << "Expect 0.4, received " << sr.Evaluate(2) << "\n";
-    std::cout << "Expect 0.2, received " << sr.Evaluate(1) << "\n";
-    std::cout << "Expect 0, received " << sr.Evaluate(4) << "\n";
+    std::cout << "Expect 1, received " << sr.EvaluateValue(10) << "\n";
+    std::cout << "Expect 0.8, received " << sr.EvaluateValue(7) << "\n";
+    std::cout << "Expect 0.6, received " << sr.EvaluateValue(5) << "\n";
+    std::cout << "Expect 0.4, received " << sr.EvaluateValue(2) << "\n";
+    std::cout << "Expect 0.2, received " << sr.EvaluateValue(1) << "\n";
+    std::cout << "Expect 0, received " << sr.EvaluateValue(4) << "\n";
 }
