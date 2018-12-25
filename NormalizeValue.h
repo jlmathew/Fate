@@ -196,6 +196,7 @@ class GeometricRanked : public Normalize<T>
     void SetInvert(bool inv) { m_invert = inv;}
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
+       m_invert = config.GetAttributeBool ("invertValue", m_invert);
     }
     void Print(std::ostream &os) const {
     os << "_Ngr:" << m_invert << "_";
@@ -230,6 +231,8 @@ class NormalRanked : public NormalizeValue<T>
     virtual ~NormalRanked() { }
     void Config(ConfigWrapper &config) {
        NormalizeValue<T>::Config(config);
+         m_allowZero = config.GetAttributeBool ("allowZero", m_allowZero);
+
     }
     void Print(std::ostream &os) const {
     os << "_Nr:" << m_allowZero << "_";
