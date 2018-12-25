@@ -409,7 +409,7 @@ public:
   UtilityU32ValuationEval();
   UtilityU32ValuationEval(ConfigWrapper &config);
   ~UtilityU32ValuationEval();
-  virtual void OnPktIngress (PktType & pkt, const PktTxStatus & status);
+  virtual void OnPktIngress (PktType & pkt);
 
   virtual void DoDelete (const AcclContentName & name);
 

@@ -54,11 +54,12 @@ template<class T>
 class Normalize
 {
   public:
-    Normalize() {
-    }
+    Normalize() { }
+    Normalize(ConfigWrapper &config) { Config(config); }
     ~Normalize() 
     {
     }
+    void Config(ConfigWrapper &config) {}
     void InsertValue(T a)
     {
     }
@@ -90,8 +91,13 @@ class NormalizeValue : public Normalize<T>
 {
   public:
     NormalizeValue() {}
-    ~NormalizeValue() 
+    NormalizeValue(ConfigWrapper &xml) { Config(xml);}
+    virtual ~NormalizeValue() 
     { m_values.clear();}
+    
+    void Config(ConfigWrapper &config) {
+       Normalize<T>::Config(config);
+    }
     void InsertValue(T a)
     {
        m_values.insert(a);
@@ -143,7 +149,11 @@ class NormalMatch : public Normalize<T>
   public: 
     NormalMatch() {}
     ~NormalMatch() {}
+    NormalMatch(ConfigWrapper &config) { Config(config); }
     
+    void Config(ConfigWrapper &config) {
+       Normalize<T>::Config(config);
+}
 
     void
     InsertMatchValue(const RangeData<T> &match)
@@ -171,10 +181,13 @@ template <class T>
 class GeometricRanked : public Normalize<T>
 {
 	public:
-    GeometricRanked(): m_invert(false)
-      	{};
+    GeometricRanked(): m_invert(false) {};
+    GeometricRanked(ConfigWrapper &config): m_invert(false) { Config(config);};
     ~GeometricRanked() {};
     void SetInvert(bool inv) { m_invert = inv;}
+    void Config(ConfigWrapper &config) {
+       Normalize<T>::Config(config);
+    }
 
     double EvaluateValue(T val)
     {
@@ -201,7 +214,11 @@ class NormalRanked : public NormalizeValue<T>
 {
 	public:
     NormalRanked(): m_allowZero(true) {}
+    NormalRanked(ConfigWrapper &config): m_allowZero(true) { Config(config);}
     virtual ~NormalRanked() { }
+    void Config(ConfigWrapper &config) {
+       NormalizeValue<T>::Config(config);
+    }
     double EvaluateValue(T val) 
     {
 	    //should we check if the provided value exists?
@@ -237,7 +254,11 @@ class StepRanked: public NormalizeValue<T>
 {
 	public:
    StepRanked() {}
+    StepRanked(ConfigWrapper &config) { Config(config);}
    ~StepRanked() { } 
+    void Config(ConfigWrapper &config) {
+       NormalizeValue<T>::Config(config);
+    }
   static const dataNameType_t & IdName (void)
   {
     static const dataNameType_t idName ("StepRanked");

@@ -41,6 +41,7 @@ class ModuleManager;
 #include <exception>
 #include <stdexcept>
 //#include "PacketTypeBase.h"
+#include "NormalizeValue.h"
 
 
 
@@ -100,6 +101,43 @@ private:                       //only 1 copy, this is a factory/generator (singl
   {
   }
   static RegisterTemplate < std::string, StoreManager * >m_allStores;
+};
+
+//Normalize generator
+template<class T>
+class NormalizeGenerator {
+	private:
+		NormalizeGenerator() {};
+		virtual ~NormalizeGenerator() {};
+	public:
+  static Normalize<T>  *
+  CreateNewNormalizeEval(ConfigWrapper &config)
+  {
+   dataNameType_t name = config.GetAttribute ("normalizeName", dataNameType_t (""));
+   if (!name.compare(NormalizeValue<T>::IdName())) {
+      return new NormalizeValue<T> (config);
+   } 
+   else if (!name.compare(NormalMatch<T>::IdName())) {
+      return new NormalMatch<T>(config);	   
+	   }
+   else if (!name.compare(GeometricRanked<T>::IdName())) {
+	  return new GeometricRanked<T>(config); 
+   } 
+   else if (!name.compare(NormalRanked<T>::IdName())) {
+	return new NormalRanked<T>(config);
+   } 
+   else if (!name.compare(StepRanked<T>::IdName())) {
+  	return new StepRanked<T>(config); 
+	   }
+   
+     else
+    {
+      dataNameType_t errorStr = "Invalid NormalizedEvaluator:";
+      errorStr.append (name);
+      errorStr.append (", can't create.");
+      throw::std::invalid_argument (errorStr.c_str ());
+    }
+  }
 };
 
 #endif

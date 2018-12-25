@@ -166,13 +166,13 @@ UtilityLruSp::Compute ()
       return;
     }                           //no data
 
-  std::list < std::pair < dataNameType_t, LruDataSpatial > >::iterator it = temppad->begin ();
+  //std::list < std::pair < dataNameType_t, LruDataSpatial > >::iterator it = temppad->begin ();
 
       int i = 0;
 
       //std::sort(temppad->begin(), temppad->end(), this->sort_pred);
       temppad->sort (sort_lru);
-      for (std::list < std::pair < dataNameType_t, LruDataSpatial > >::iterator it2 = temppad->begin (); it2 != temppad->end (); it2++)
+      for (std::list < std::pair < dataNameType_t, LruDataSpatial > >::iterator it2 = temppad->begin ();   it2 != temppad->end (); it2++)
         {
           (it2->second).m_position = ++i;
         }
@@ -1618,12 +1618,17 @@ UtilityEgressCount::EstMemoryUsed (void) const
 }
 
 
-UtilityU32ValuationEval::UtilityValuationEval(): m_normalize(nullptr) {}
-UtilityU32ValuationEval::UtilityValuationEval(ConfigWrapper &config) : m_normalize(nullptr) {
+UtilityU32ValuationEval::UtilityU32ValuationEval()
+	: m_normalize(nullptr) {}
+UtilityU32ValuationEval::UtilityU32ValuationEval(ConfigWrapper &config)
+       	: m_normalize(nullptr) {
     Config(config);
 }
-UtilityU32ValuationEval::~UtilityValuationEval() {}
-   void UtilityValuationEval::OnPktIngress (PktType &data) {
+UtilityU32ValuationEval::~UtilityU32ValuationEval() {
+    delete m_scratchpad;
+}
+
+   void UtilityU32ValuationEval::OnPktIngress (PktType &data) {
 	   std::string strVal;
    bool attribExists = data.GetNamedAttribute (m_defaultAttribute, strVal);
    if (attribExists) {
@@ -1632,7 +1637,7 @@ UtilityU32ValuationEval::~UtilityValuationEval() {}
 }
 
    void UtilityU32ValuationEval::DoDelete (const AcclContentName & name) {
-      uint64_t retValue;
+      uint32_t retValue;
       bool exist = m_scratchpad->ExistData (name, retValue);
       if (exist) {
          m_scratchpad->EraseData(name); 
@@ -1643,22 +1648,27 @@ UtilityU32ValuationEval::~UtilityValuationEval() {}
   }
 
    void UtilityU32ValuationEval::Config (ConfigWrapper & config) {
-      UtilityHandlerBase::Config(xmlConfig);
+      UtilityHandlerBase::Config(config);
   	if (!m_useAlias)
     	{
       	m_name = IdName ();
     	}
-   
+	//set normalize
+	
+	//set other values
+   m_scratchpad = new StorageClass < dataNameType_t, uint32_t >;
+
+  m_scratchpad->setStorageType (m_storageMethod);
+  
    }
    double  UtilityU32ValuationEval::Value (const AcclContentName & name) const {
-     uint64_t retValue;
+     uint32_t retValue;
       bool exist = m_scratchpad->ExistData (name, retValue);
       if (exist) {
-	    m_normalize->EvaluateValue(retValue);
+	    return m_normalize->EvaluateValue(retValue);
       } else { //data not found!
           return m_defaultValue;
       }
-
   
   }
 
