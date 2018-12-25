@@ -59,6 +59,9 @@ class Normalize
     ~Normalize() 
     {
     }
+    void Print(std::ostream &os) const {
+    os << "_N_";
+    }
     void Config(ConfigWrapper &config) {}
     void InsertValue(T a)
     {
@@ -97,6 +100,9 @@ class NormalizeValue : public Normalize<T>
     
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
+    }
+    void Print(std::ostream &os) const {
+    os << "_Nv_";
     }
     void InsertValue(T a)
     {
@@ -154,6 +160,9 @@ class NormalMatch : public Normalize<T>
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
 }
+    void Print(std::ostream &os) const {
+    os << "_Nm_"; 
+    }
 
     void
     InsertMatchValue(const RangeData<T> &match)
@@ -188,6 +197,9 @@ class GeometricRanked : public Normalize<T>
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
     }
+    void Print(std::ostream &os) const {
+    os << "_Ngr:" << m_invert << "_";
+    }
 
     double EvaluateValue(T val)
     {
@@ -218,6 +230,9 @@ class NormalRanked : public NormalizeValue<T>
     virtual ~NormalRanked() { }
     void Config(ConfigWrapper &config) {
        NormalizeValue<T>::Config(config);
+    }
+    void Print(std::ostream &os) const {
+    os << "_Nr:" << m_allowZero << "_";
     }
     double EvaluateValue(T val) 
     {
@@ -264,6 +279,9 @@ class StepRanked: public NormalizeValue<T>
     static const dataNameType_t idName ("StepRanked");
       return idName;
   }
+    void Print(std::ostream &os) const {
+    os << "_Nsr_";
+    }
 
     double EvaluateValue(T val) 
     {
