@@ -54,12 +54,14 @@ UtilityHandlerBase *
 UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
 {
   dataNameType_t name = config.GetAttribute ("name", dataNameType_t (""));
-  
+ 
+ /* 
 //delete me, only for compile
 #include <ostream>
 #include <iostream>
 Normalize<uint32_t> *p = NormalizeGenerator<uint32_t>::CreateNewNormalizeEval(config);
 std::cout << " p is " << p << "\n";
+*/
 
   //start with Aggregate Utilities
   if (!name.compare (UtilitySum::IdName ()))

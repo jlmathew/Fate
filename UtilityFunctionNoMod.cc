@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include "UtilityFunctionNoMod.h"
 #include "RangeData.h"
-
+#include "UtilityFunctionGenerator.h"
 
 bool
 sort_lru (const std::pair < dataNameType_t, LruData > &left, const std::pair < dataNameType_t, LruData > &right)
@@ -1617,7 +1617,7 @@ UtilityEgressCount::EstMemoryUsed (void) const
   return m_scratchpad->size ();       
 }
 
-
+//evaluate based upon attribute value
 UtilityU32ValuationEval::UtilityU32ValuationEval()
 	: m_normalize(nullptr) {}
 UtilityU32ValuationEval::UtilityU32ValuationEval(ConfigWrapper &config)
@@ -1626,14 +1626,18 @@ UtilityU32ValuationEval::UtilityU32ValuationEval(ConfigWrapper &config)
 }
 UtilityU32ValuationEval::~UtilityU32ValuationEval() {
     delete m_scratchpad;
+    delete m_normalize;
 }
 
    void UtilityU32ValuationEval::OnPktIngress (PktType &data) {
-	   std::string strVal;
-   bool attribExists = data.GetNamedAttribute (m_defaultAttribute, strVal);
+   uint64_t value;
+      AcclContentName name = data.GetAcclName ();
+   bool attribExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
+   //this is 32 bit, but we read a generic 64bit 
    if (attribExists) {
-      
-   }
+       m_scratchpad->SetData(name, value);
+       m_normalize->InsertValue(value);
+}
 }
 
    void UtilityU32ValuationEval::DoDelete (const AcclContentName & name) {
@@ -1654,7 +1658,10 @@ UtilityU32ValuationEval::~UtilityU32ValuationEval() {
       	m_name = IdName ();
     	}
 	//set normalize
-	
+	ConfigWrapper *normConfig = config.GetFirstChildUtility("Normalize");
+	if (normConfig->valid()) {
+m_normalize = NormalizeGenerator<uint32_t>::CreateNewNormalizeEval(*normConfig);
+	}
 	//set other values
    m_scratchpad = new StorageClass < dataNameType_t, uint32_t >;
 
