@@ -30,7 +30,7 @@ SOFTWARE.
 */
 #include "ForwardBasicManagerPktQueue.h"
 
-
+/*
 ForwardBasicManagerPktQueue::ForwardBasicManagerPktQueue ()
 {
 }
@@ -55,14 +55,14 @@ ForwardBasicManagerPktQueue::Config (ConfigWrapper & config)
 //      m_name = IdName ();
 //    }
 }
-
+*/
 /*const std::string &
 ForwardBasicManagerPktQueue::Name () const 
 {
   return m_name;
 }*/
 
-
+/*
 bool
 ForwardBasicManagerPktQueue::OnInit (UtilityExternalModule * module)
 {
@@ -207,5 +207,5 @@ ForwardBasicManagerPktQueue::TxPkts ()
   ModuleManager::OnPktEgress (data, status);    //let utilities judge it
 
 }
-
+*/
 

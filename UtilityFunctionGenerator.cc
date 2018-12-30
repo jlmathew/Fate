@@ -39,8 +39,10 @@ SOFTWARE.
 #include "CacheBasicManager2.h"
 
 //For Ns3 Ipv4 packets, conditional compile may be necessary
+#ifndef NO_NS3
 #include "ns3/ForwardNs3Ipv4Manager.h"
 #include "ns3/ForwardNs3Ipv4ManagerF2.h"
+#endif
 
 UtilityGenerator::UtilityGenerator ()
 {
@@ -184,6 +186,7 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
     return new NodeManager(config);
   }
 //For Ns3 Ipv4 packets, conditional compile may be necessary
+#ifndef NO_NS3
  else if (!name.compare (ForwardNs3Ipv4Manager::IdName ()))
    {
       return new ForwardNs3Ipv4Manager (config);
@@ -192,6 +195,7 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
    {
       return new ForwardNs3Ipv4ManagerF2 (config);
   }
+#endif
   else
     {
       dataNameType_t errorStr = "Invalid Module:";

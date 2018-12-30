@@ -30,7 +30,7 @@ SOFTWARE.
 */
 #ifndef FORWARDMANAGERBASEPKTQUEUE_H_
 #define FORWARDMANAGERBASEPKTQUEUE_H_
-
+/*
 #include "ModuleManager.h"
 #include <tuple>
 
@@ -85,5 +85,5 @@ private:
 
 
 };
-
+*/
 #endif

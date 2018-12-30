@@ -1,5 +1,5 @@
-#define "FateTable.h"
-
+#include "FateTable.h"
+/*
 class TableRouteInfo : public TableBase
 {
 	 
@@ -18,4 +18,4 @@ class TableRouteInfo : public TableBase
 
 
 };
-
+*/

@@ -31,7 +31,7 @@ SOFTWARE.
 #ifndef FATE_TABLE_BASE_H_
 #define FATE_TABLE_BASE_H_
 
-
+/*
 #include <algorithm>
 #include <cstdlib>
 #include <stdint.h>
@@ -153,6 +153,6 @@ class PhyProperties : public TableBase
     void SetPhyBusy();
     void GetPowerUsage();
     void SetPowerUsage();
-};
+}; */
 #endif
 

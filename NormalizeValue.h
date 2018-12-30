@@ -49,6 +49,7 @@ SOFTWARE.
 #include "RangeData.h"
 #include <stdexcept>
 #include "ContentName.h"
+#include "UtilityConfigBase.h"
 
 template<class T>
 class Normalize
