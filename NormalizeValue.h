@@ -57,29 +57,24 @@ class Normalize
   public:
     Normalize() { }
     Normalize(ConfigWrapper &config) { Config(config); }
-    ~Normalize() 
+    virtual ~Normalize() 
     {
     }
-    void Print(std::ostream &os) const {
+    virtual void Print(std::ostream &os) const {
     os << "_N_";
     }
-    void Config(ConfigWrapper &config) {}
-    void InsertValue(T a)
-    {
-    }
-    void InsertNearFirstValue(T a)  //for always first inserts
-    {
-    }
-    void InsertNearLastValue(T a)  //for always last inserts, like time()
+    virtual void Config(ConfigWrapper &config) {}
+    virtual void InsertValue(T a)
     {
     }
 
-    bool DeleteValue(T a)
+    virtual bool DeleteValue(T a)
     {
 	    return true;
     }
    
-    double EvaluateValue(T) {
+    virtual 
+	    double EvaluateValue(T) {
 	    return 0.0;
     }
   static const dataNameType_t & IdName (void)
@@ -109,15 +104,6 @@ class NormalizeValue : public Normalize<T>
     {
        m_values.insert(a);
     }
-    void InsertNearFirstValue(T a)  //for always first inserts
-    {
-       m_values.insert(m_values.begin(),a);
-    }
-    void InsertNearLastValue(T a)  //for always last inserts, like time()
-    {
-       m_values.insert(m_values.rbegin(),a);
-    }
-
     bool DeleteValue(T a)
     {
 typename std::multiset<T>::iterator it;
@@ -160,7 +146,13 @@ class NormalMatch : public Normalize<T>
     
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
-}
+   /* T m_minValue = static_cast<T>(0);
+    T m_maxValue = static_cast<T>(0);
+      m_minValue = config.GetAttribute("matchLow", m_minValue); 
+      m_maxValue = config.GetAttribute("matchHigh", m_maxValue); 
+      RangeData<T> confMatch(m_minValue,m_maxValue);
+      InsertMatchValue(confMatch);*/
+    }
     void Print(std::ostream &os) const {
     os << "_Nm_"; 
     }

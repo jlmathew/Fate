@@ -1,0 +1,1 @@
+g++ -std=c++11 -g -I.  -DNO_NS3 ../*.cc  ./NetNormalize.cpp -o NetNormalize

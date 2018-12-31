@@ -1625,8 +1625,10 @@ UtilityU32ValuationEval::UtilityU32ValuationEval(ConfigWrapper &config)
     Config(config);
 }
 UtilityU32ValuationEval::~UtilityU32ValuationEval() {
-    delete m_scratchpad;
-    delete m_normalize;
+    if (m_scratchpad)
+	    delete m_scratchpad;
+    if (m_normalize)
+	    delete m_normalize;
 }
 
    void UtilityU32ValuationEval::OnPktIngress (PktType &data) {
@@ -1661,6 +1663,9 @@ UtilityU32ValuationEval::~UtilityU32ValuationEval() {
 	ConfigWrapper *normConfig = config.GetFirstChildUtility("Normalize");
 	if (normConfig->valid()) {
 m_normalize = NormalizeGenerator<uint32_t>::CreateNewNormalizeEval(*normConfig);
+       std::stringstream ss;
+       m_normalize->Print(ss);
+       m_name.append(ss.str());
 	}
 	//set other values
    m_scratchpad = new StorageClass < dataNameType_t, uint32_t >;

@@ -182,6 +182,8 @@ ModuleManager::Config (ConfigWrapper & config,  std::set<std::string> *names, bo
 {
 
   ConfigWrapper *childConfig = config.GetFirstChildUtility ("Utility");
+  if (!childConfig)
+	  return;
 
   uint32_t counter=0;
 
