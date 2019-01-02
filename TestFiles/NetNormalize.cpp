@@ -116,7 +116,7 @@ std::cout << "\nNode1 config:\n";
       test[i].SetPacketPurpose (PktType::DATAPKT);
       nameTest.SetUniqAttribute("part", i);
       test[i].SetName(nameTest);
-      test[i].SetUnsignedNamedAttribute("normalR", i);
+      test[i].SetUnsignedNamedAttribute("normalmatch", i);
         mm1->OnPktIngress(test[i]); //1,2,3,4,5 times
         mm1->Compute();
 	auto fname = test[i].GetName().GetFullName();
@@ -129,7 +129,6 @@ std::cout << "\nNode1 config:\n";
     }
      mm1->Print(std::cout);
    }
-return 0;
 
    {
    std::cout << "NormalRanked\n";
