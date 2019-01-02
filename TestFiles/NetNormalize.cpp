@@ -116,16 +116,20 @@ std::cout << "\nNode1 config:\n";
       test[i].SetPacketPurpose (PktType::DATAPKT);
       nameTest.SetUniqAttribute("part", i);
       test[i].SetName(nameTest);
-      test[i].SetUnsignedNamedAttribute("normal", i);
+      test[i].SetUnsignedNamedAttribute("normalR", i);
         mm1->OnPktIngress(test[i]); //1,2,3,4,5 times
         mm1->Compute();
 	auto fname = test[i].GetName().GetFullName();
 	double val = testModule->Value(fname);
+	if (i<3 || i>4) {
 	std::cout << fname << " :Sent value of " << i << " expect value of " << 0 << " recieved " << val << "\n";
+	} else {
+	std::cout << fname << " :Sent value of " << i << " expect value of " << 1 << " recieved " << val << "\n";
+	} 
     }
      mm1->Print(std::cout);
    }
-
+return 0;
 
    {
    std::cout << "NormalRanked\n";
@@ -175,19 +179,27 @@ std::cout << "\nNode1 config:\n";
       test[i].SetName(nameTest);
       test[i].SetUnsignedNamedAttribute("normalranked", i*4+1);
         mm1->OnPktIngress(test[i]); //1,2,3,4,5 times
+    }
+        for(unsigned int i=0; i< 6; i++)
+    {
+      test[i].SetPacketPurpose (PktType::DATAPKT);
+      nameTest.SetUniqAttribute("part", i);
+      test[i].SetName(nameTest);
+      test[i].SetUnsignedNamedAttribute("normalstep", i*4+1);
         mm1->Compute();
 	auto fname = test[i].GetName().GetFullName();
 	double val = testModule->Value(fname);
-	std::cout << fname << " :Sent hops of " << i*4+1 << " expect value of " << " recieved " << val << "\n";
+	std::cout << fname << " :Sent hops of " << i*4+1 << " expect value of " <<(i*4.0+1.0)/(21.0) << " recieved " << val << "\n";
     }
+
     mm1->Print(std::cout);
   }
-/*
+
   {
   std::cout << "StepRanked\n";
   //Create a Node
   UtilityConfigXml config;
-  bool status = config.FirstNodeFileConfig ("NetNormalizeStep.xml");
+  bool status = config.FirstNodeFileConfig ("NetNormalStep.xml");
 
   config.Print ();
   if (!status)
@@ -228,15 +240,22 @@ std::cout << "\nNode1 config:\n";
       test[i].SetPacketPurpose (PktType::DATAPKT);
       nameTest.SetUniqAttribute("part", i);
       test[i].SetName(nameTest);
-      test[i].SetUnsignedNamedAttribute("NormalStep", i*4+1);
+      test[i].SetUnsignedNamedAttribute("normalstep", i*4+1);
         mm1->OnPktIngress(test[i]); //1,2,3,4,5 times
+    }
+    for(unsigned int i=0; i< 6; i++)
+    {
+      test[i].SetPacketPurpose (PktType::DATAPKT);
+      nameTest.SetUniqAttribute("part", i);
+      test[i].SetName(nameTest);
+      test[i].SetUnsignedNamedAttribute("normalstep", i*4+1);
         mm1->Compute();
 	auto fname = test[i].GetName().GetFullName();
 	double val = testModule->Value(fname);
-	std::cout << fname << " :Sent hops of " << i*4+1 << " expect value of " << 1.0/(i*4+1) << " recieved " << val << "\n";
+	std::cout << fname << " :Sent hops of " << i*4+1 << " expect value of " << (i+1)/6.0 << " recieved " << val << "\n";
     }
     mm1->Print(std::cout);
    }
-*/
+
 }
 

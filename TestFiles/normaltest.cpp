@@ -14,13 +14,16 @@ int main()
     std::cout << "NormalizeValue:" << "\n";
     n.InsertValue(3);
     n.InsertValue(7);
+    n.InsertValue(6);
+    n.InsertValue(10);
+    n.InsertValue(10);
     n.InsertValue(10);
     n.DeleteValue(10);
-    std::cout << "expect 0, received " << n.EvaluateValue(3) << "\n";
-    std::cout << "expect 1, received " << n.EvaluateValue(7) << "\n";
+    std::cout << "expect .125, received " << n.EvaluateValue(3) << "\n";
+    std::cout << "expect 1, received " << n.EvaluateValue(10) << "\n";
     n.AllowZeroValues(false);
-    std::cout << "expect .2, received " << n.EvaluateValue(3) << "\n";
-    std::cout << "expect .8, received " << n.EvaluateValue(6) << "\n";
+    std::cout << "expect .5, received " << n.EvaluateValue(6) << "\n";
+    std::cout << "expect .625, received " << n.EvaluateValue(7) << "\n";
 
     std::cout << "\nNormalMatch:\n";
     m.InsertValue(3); 
@@ -42,14 +45,12 @@ int main()
 
     std::cout << "\nStepMatch:\n";
     sr.InsertValue(10);
-    sr.InsertValue(1);
-    sr.InsertValue(5);
     sr.InsertValue(2);
+    sr.InsertValue(5);
+    sr.InsertValue(3);
     sr.InsertValue(7);
     std::cout << "Expect 1, received " << sr.EvaluateValue(10) << "\n";
     std::cout << "Expect 0.8, received " << sr.EvaluateValue(7) << "\n";
     std::cout << "Expect 0.6, received " << sr.EvaluateValue(5) << "\n";
-    std::cout << "Expect 0.4, received " << sr.EvaluateValue(2) << "\n";
-    std::cout << "Expect 0.2, received " << sr.EvaluateValue(1) << "\n";
-    std::cout << "Expect 0, received " << sr.EvaluateValue(4) << "\n";
+    std::cout << "Expect 0.2, received " << sr.EvaluateValue(2) << "\n";
 }

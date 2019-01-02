@@ -119,7 +119,7 @@ typename std::multiset<T>::iterator it;
     }
    
     double EvaluateValue(T) {
- throw std::invalid_argument( "received negative value" );
+ throw std::invalid_argument( "baseclass called, should be a derived class" );
 	    return 0.0;
     }
       static const dataNameType_t & IdName (void)
@@ -146,12 +146,12 @@ class NormalMatch : public Normalize<T>
     
     void Config(ConfigWrapper &config) {
        Normalize<T>::Config(config);
-   /* T m_minValue = static_cast<T>(0);
-    T m_maxValue = static_cast<T>(0);
+     double m_minValue = 0.0;
+     double m_maxValue = 0.0;
       m_minValue = config.GetAttribute("matchLow", m_minValue); 
       m_maxValue = config.GetAttribute("matchHigh", m_maxValue); 
-      RangeData<T> confMatch(m_minValue,m_maxValue);
-      InsertMatchValue(confMatch);*/
+      RangeData<T> confMatch(static_cast<T>(m_minValue),static_cast<T>(m_maxValue));
+      InsertMatchValue(confMatch);
     }
     void Print(std::ostream &os) const {
     os << "_Nm_"; 
@@ -219,16 +219,35 @@ template <class T>
 class NormalRanked : public NormalizeValue<T>
 {
 	public:
-    NormalRanked(): m_allowZero(true) {}
-    NormalRanked(ConfigWrapper &config): m_allowZero(true) { Config(config);}
+    enum normalRankedValueOption_t : uint16_t
+    {  
+	inValid,
+	floor,
+	ceiling,
+	fullRange,
+	invfloor,
+	invceiling,
+	invfullRange
+    };
+    NormalRanked(): m_strVal("ceiling"), m_valOption(ceiling) {}
+    NormalRanked(ConfigWrapper &config):m_strVal("ceiling"), m_valOption(ceiling)  { 
+	    Config(config);
+    }
     virtual ~NormalRanked() { }
     void Config(ConfigWrapper &config) {
        NormalizeValue<T>::Config(config);
-         m_allowZero = config.GetAttributeBool ("allowZero", m_allowZero);
+       m_strVal = config.GetAttribute("value_type", m_strVal);
+
+       if (m_strVal == "ceiling") { m_valOption = ceiling;}
+       else if (m_strVal == "floor") { m_valOption = floor;}
+       else if (m_strVal == "fullRange") { m_valOption = fullRange;}
+       else if (m_strVal == "invceiling") { m_valOption = invceiling;}
+       else if (m_strVal == "invfloor") { m_valOption = invfloor;}
+       else if (m_strVal == "invfullRange") { m_valOption = invfullRange;}
 
     }
     void Print(std::ostream &os) const {
-    os << "_Nr:" << m_allowZero << "_";
+    os << "_Nr:" << m_valOption << "_";
     }
     double EvaluateValue(T val) 
     {
@@ -241,21 +260,41 @@ class NormalRanked : public NormalizeValue<T>
 	T max = *(this->m_values).crbegin();
 	if (min == max)
 		return 1.0;
-	if (m_allowZero) {
-	  return (double) (val-min)/(max-min);
-	} else { //avoid having zero as a result
-	  return (double) (val-min+1)/(max-min+1);
-        }
+	double typeval=1.0;
+	switch (m_valOption) {
+           case floor:  //can be 0.0
+		typeval = (double) (static_cast<double>(val-min))/(max-min);
+		break;
+           case ceiling:  // can NOT be 0.0
+		typeval = (double) (static_cast<double>(val-min)+1.0)/(max-min+1.0);
+		break;
+           case fullRange:  // can NOT be 0.0
+		typeval = (double) (val)/(max);
+		break;
+           case invfloor:  
+		typeval = 1.0 - (double) (static_cast<double>(val-min))/(max-min);
+		break;
+           case invceiling:  
+		typeval = 1.0 - (double) (static_cast<double>(val-min)+1.0)/(max-min+1.0);
+		break;
+           case invfullRange:  
+		typeval = 1.0 - (double) (val)/(max);
+		break;
+           default:
+		throw ("Unknown value option type");
+	}
+      return typeval;
     }
+    
       static const dataNameType_t & IdName (void)
   {
     static const dataNameType_t idName ("NormalRanked");
       return idName;
   }
 
-    void AllowZeroValues(bool val) { m_allowZero = val; }
 	private:
-    bool m_allowZero;
+    std::string m_strVal;
+    normalRankedValueOption_t m_valOption;
 };
 
 
@@ -264,11 +303,14 @@ template <class T>
 class StepRanked: public NormalizeValue<T>
 {
 	public:
-   StepRanked() {}
-    StepRanked(ConfigWrapper &config) { Config(config);}
+   StepRanked() : m_rankHigh(true) {}
+    StepRanked(ConfigWrapper &config) : m_rankHigh(true) { Config(config);}
    ~StepRanked() { } 
     void Config(ConfigWrapper &config) {
        NormalizeValue<T>::Config(config);
+       m_rankHigh = config.GetAttributeBool("rank_high", m_rankHigh);
+
+
     }
   static const dataNameType_t & IdName (void)
   {
@@ -281,9 +323,37 @@ class StepRanked: public NormalizeValue<T>
 
     double EvaluateValue(T val) 
     {
- throw std::invalid_argument( "received negative value" );
- return 0.0;
+	uint32_t totalSize = this->m_values.size();
+	if (0 == totalSize)
+		return 0.0;
+	
+	if (1 == totalSize)
+		return 1.0;
+        if (m_rankHigh) {
+           auto count = totalSize;
+	   for (auto i=this->m_values.crbegin(); i != this->m_values.crend(); i++) {
+              if (val == *i) {
+                  return (double) count/totalSize;
+	      } else {
+                  --count;
+	      }
+	   }
+	      throw ("Value not found");
+	} else {
+           auto count = 1;
+	   for (auto i=this->m_values.cbegin(); i != this->m_values.cend(); i++) {
+              if (val == *i) {
+                  return (double) count/totalSize;
+	      } else {
+                  ++count;
+	      }
+	   }
+	      throw ("Value not found");
+	}	
+
     }
+    private:
+    bool m_rankHigh;
 
     
 };
