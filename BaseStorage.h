@@ -135,11 +135,17 @@ public:
   {
     m_utilityData[key_tName] = updatedData;
   }
-  void UpdateData (const dataName_t & key_tName, const UtilityData_t & updatedData)
+  int64_t UpdateData (const dataName_t & key_tName, const UtilityData_t & updatedData)
   {
-    if (!ExistData (key_tName, updatedData))
+    uint64_t size;
+    bool exist = (ExistData (key_tName, updatedData));
+	    //ASUMPTION named data wont change
+    if (!exist)
       {
         m_utilityData[key_tName] = updatedData;
+	return updatedData.size();
+      } else {
+        return 0;
       }
   }
   void EraseData (const dataName_t & key_tName)
