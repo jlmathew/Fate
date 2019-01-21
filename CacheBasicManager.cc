@@ -35,8 +35,10 @@ SOFTWARE.
 CacheBasicManager::CacheBasicManager ()
   :m_cacheStore (NULL)
    , m_storageLimit(0)
-   , m_cacheStoreName("CacheStore")
+   , m_cacheStoreName("None")
    , m_dropValue(0.0)
+   , m_protectInsert(true)
+   , m_contentType(IcnDefault)
 {
 }
 
@@ -44,8 +46,10 @@ CacheBasicManager::CacheBasicManager (ConfigWrapper & config)
   : //ModuleManager::ModuleManager(config)
     m_cacheStore (NULL)
     ,m_storageLimit (0)
-    ,m_cacheStoreName ("CacheStore")
+    ,m_cacheStoreName ("None")
    , m_dropValue(0.0)
+   , m_protectInsert(true)
+   , m_contentType(IcnDefault)
 {
   Config (config);
 }
@@ -67,11 +71,9 @@ CacheBasicManager::OnInit (UtilityExternalModule * module)
 {
   ModuleManager::OnInit (module);
   //get cache store association
-  if (NULL == m_cacheStore)
+  if ((m_useStore) && (NULL == m_cacheStore))
     {
-      //FIXME JLM TODO need a 'self node' option for testing individual modules
-      m_cacheStore = dynamic_cast < TypicalCacheStore * >((module->GetDevice ()->GetSelfNode ())->GetStore (m_cacheStoreName));
-
+        m_cacheStore = dynamic_cast < TypicalCacheStore * >((module->GetDevice ()->GetSelfNode ())->GetStore (m_cacheStoreName));
     }
   
   //should make this an easy subroutine
@@ -95,12 +97,32 @@ CacheBasicManager::Config (ConfigWrapper & config)
   m_cacheStoreName = config.GetAttribute ("associatedStore", m_cacheStoreName.c_str ());
   m_storageLimit = config.GetAttribute ("cacheSize", m_storageLimit);
   m_dropValue = config.GetAttribute ("minDropValue", m_dropValue);
+  if (m_cacheStoreName.compare("None")) {
+    m_useStore=true;
+  } else {
+    m_useStore=false;
+  }
+  m_protectInsert=config.GetAttributeBool("protNewPkt", m_protectInsert);
+  std::string ctype;
+  ctype = config.GetAttribute("ContentTypes", m_contentTypeNames[m_contentType]);
+  if (ctype != m_contentTypeNames[m_contentType]) {
+     if (ctype == "Icn")
+	     m_contentType = IcnDefault;
+     else if (ctype == "File")
+	     m_contentType = IcnFile;
+     else
+	     m_contentType = IcnDefault;
+  }
 }
 
 
 void
 CacheBasicManager::SetStore (StoreManager * store)
 {
+  if (m_cacheStore)
+    delete m_cacheStore;
+
+  m_useStore = true;
   m_cacheStore = dynamic_cast < TypicalCacheStore * >(store);
 }
 
@@ -128,6 +150,23 @@ CacheBasicManager::OnPktIngress (PktType & pkt)
 void
 CacheBasicManager::OnDebugPktIngress (PktType & debug)
 {
+  /*switch (cmd) {
+     case hitRatio:
+     break;
+     case namevalue:
+     break;
+     case allnames:
+     break;
+     case allnamevalues:
+     break;
+     case purgednamevalues:
+     break;
+     case allnameformula;
+     break;
+     case purgednameformula;
+     break;
+
+  }*/
 }
 
 void
@@ -139,17 +178,39 @@ CacheBasicManager::OnControlPktIngress (PktType & control)
 
 void
 CacheBasicManager::OnDataInterestPktIngress (PktType & interest)
+{ 
+   switch (m_contentType) {
+	   case IcnDefault:
+		   IcnDefaultAction(interest);
+		   break;
+	   case IcnFile:
+		   IcnFileAction(interest);
+		   break;
+	   default:
+	       assert("invalide packet handling format");
+   }
+}
+
+void
+CacheBasicManager::IcnFileAction (PktType & interest)
+{
+
+}
+void
+CacheBasicManager::IcnDefaultAction (PktType & interest)
 {
   ModuleManager::OnPktIngress (interest);       //let utilities judge it
 
-  assert(m_cacheStore->size () <= m_storageLimit);
+//std::cout << "cb2 pkt is " << interest;
 
   if (interest.GetPacketPurpose () & PktType::DATAPKT)
     {
-      m_cacheStore->SetData (interest.GetAcclName (), interest);
+      if(m_useStore)
+         m_cacheStore->SetData (interest.GetAcclName (), interest);
+
       m_PktNames.insert (interest.GetAcclName ());
 //std::cout << "\nDATA PKT INSERT:" << interest.GetAcclName();
-      if (m_cacheStore->size () > m_storageLimit)
+      if (m_PktNames.size() > m_storageLimit)
         {
           //delete all expired values OR lowest value
           Compute ();
@@ -158,13 +219,21 @@ CacheBasicManager::OnDataInterestPktIngress (PktType & interest)
           std::list < std::pair < double, AcclContentName> > PktList;
           //GetPacketsByValue (valueRange, PktList);  //Need to test this first
           //or
+          
           if (PktList.empty ())
             {
-              uint64_t n = 2;
-
+  
+              uint64_t n;
+              if (m_protectInsert)
+              {
+                   n = 2;
+              }
+              else 
+              {
+                   n = 1;
+              }
               GetLowestNPackets (n, PktList);   //or lowest Packet
             }
-assert(PktList.size() == 2);
           //We realy want to asyn queue up a delete store request, for now, do this
           //FIXME TODO, use DoStoreActions()
           //Also, we do NOT delete the current packet, UNLESS its value is below threshold.
@@ -172,7 +241,7 @@ assert(PktList.size() == 2);
 
   //drop lowest packet, unless its our recent packet AND its value is above dropValue 
   //drop same pkt if value is <= m_dropValue(typically 0)
-  if ((val.second == interest.GetAcclName()) && (val.first > m_dropValue)) 
+  if (m_protectInsert && (val.second == interest.GetAcclName()) && (val.first > m_dropValue)) 
   {
           PktList.pop_front();     
   } else { 
@@ -199,7 +268,7 @@ PktList.pop_back();
       PktType fakePkt;
 
       //only do this for interest or data packets
-      bool found = m_cacheStore->ExistData (interest.GetAcclName (), fakePkt);
+      bool found  = (m_PktNames.find(interest.GetAcclName()) != m_PktNames.end());
 
       if (found)
         {                       //give interest packet LOW value
@@ -259,24 +328,13 @@ CacheBasicManager::StoreActionsDone (const std::list < StoreEvents > &list)
 void
 CacheBasicManager::LocalStoreDelete (const std::list < std::pair < double, AcclContentName> > &list)
 {
+  ModuleManager::LocalStoreDelete(list);
 
-  std::list < std::pair< double, AcclContentName> >::const_iterator itl = list.begin ();
-  for (; itl != list.end (); itl++)
+  for (auto itl=list.begin(); itl != list.end (); itl++)
     {
       AcclContentName name = itl->second;
-      //std::cout << "\nCache Purge(" << name << "):";
-      //double value=0.0;
-      //Print(std::cout, name, value); 
-      //std::cout << "or " << itl->first << "\n";
- 
-      std::vector < UtilityHandlerBase * >::iterator it = m_utilityEval.begin ();
-      for (; it != m_utilityEval.end (); it++)
-        {
-          //(*it)->LocalStoreDelete(name);
-          (*it)->DoDelete (name);
-        }
-      m_PktNames.erase (name);
-      m_cacheStore->EraseData (name);
+      if (m_useStore)
+         m_cacheStore->EraseData (name);
 
     }
   //JLM FIX ME need to send out store delete event, or store insert event, as appropriate

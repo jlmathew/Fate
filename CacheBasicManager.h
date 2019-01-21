@@ -42,6 +42,13 @@ SOFTWARE.
 class CacheBasicManager:public ModuleManager
 {
 public:
+  enum CachePacketType {
+    Invalid,
+    IcnDefault,
+    IcnFile,
+
+    maxTypes
+  };
   CacheBasicManager ();
 
   CacheBasicManager (ConfigWrapper & config);
@@ -79,7 +86,9 @@ private:
   void OnDataInterestPktIngress (PktType & interest);
   void OnControlPktIngress (PktType & control);
   void OnDebugPktIngress (PktType & debug);
-
+  void IcnDefaultAction(PktType &pkt);
+  void IcnFileAction(PktType &pkt);
+  
   TypicalCacheStore *m_cacheStore;
   uint64_t m_storageLimit;
 
@@ -91,7 +100,10 @@ private:
 
   double m_dropValue;
   std::string m_moduleName; //hierarchical name: nodeName/moduleName
-
+  bool m_useStore;
+  bool m_protectInsert;
+  CachePacketType m_contentType;
+  const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
 };
 
 #endif

@@ -37,7 +37,6 @@ SOFTWARE.
 #include "SecurityBasicManager.h"
 #include "CacheBasicManager.h"
 #include "CacheBasicManager2.h"
-#include "CacheBasicManagerHdr.h"
 
 //For Ns3 Ipv4 packets, conditional compile may be necessary
 #ifndef NO_NS3
@@ -173,10 +172,6 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
   else if (!name.compare (CacheBasicManager2::IdName ()))
   {
     return new CacheBasicManager2 (config);
-  }
-  else if (!name.compare (CacheBasicManagerHdr::IdName ()))
-  {
-    return new CacheBasicManagerHdr (config);
   }
   else if (!name.compare (SecurityBasicManager::IdName ()))
   {
