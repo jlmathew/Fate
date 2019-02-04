@@ -45,6 +45,8 @@ enum StorageClass_t
 
 const StorageClass_t DEFAULT_STORAGE_CLASS = Storage_MemMap;
 
+
+
 template < class dataName_t = AcclContentName, class UtilityData_t = double >
 class memMap
 {

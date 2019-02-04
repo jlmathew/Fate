@@ -61,6 +61,9 @@ public:
 
   virtual bool AddConfig (UtilityHandlerBase * uc, uint16_t position = 0);
 
+  virtual void CacheHdrHit(PktType &interest);
+  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
+
   //delete Configs by name or number
 
   static const dataNameType_t & IdName (void)
@@ -78,6 +81,7 @@ public:
 
   void StoreActionsDone (const std::list < StoreEvents > &list);
   void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
+  void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
   void DoStoreActions (const std::list < StoreEvents > &list);
 
 private:
@@ -90,6 +94,7 @@ private:
   void IcnFileAction(PktType &pkt);
   
   TypicalCacheStore *m_cacheStore;
+  TypicalCacheStore *m_cacheFileStore;
   uint64_t m_storageLimit;
 
   std::string m_cacheStoreName;
@@ -97,13 +102,15 @@ private:
   std::string m_statsMiss;
   std::string m_statsHit;
   std::string m_statsHitExpired;
-
+  std::string m_statsFileHit;
+  std::string m_statsFileMiss;
   double m_dropValue;
   std::string m_moduleName; //hierarchical name: nodeName/moduleName
   bool m_useStore;
   bool m_protectInsert;
   CachePacketType m_contentType;
   const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
+  AcclContentName m_matchHeaderName;
 };
 
 #endif
