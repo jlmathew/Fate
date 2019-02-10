@@ -57,6 +57,7 @@ struct FileInfo_t
 };
 class BaseFileStorage
 {
+    public:
     BaseFileStorage();
     virtual ~BaseFileStorage();
     

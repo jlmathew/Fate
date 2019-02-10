@@ -32,22 +32,26 @@ SOFTWARE.
 #include "UtilityFunctionGenerator.h"
 
 CacheBasicManager::CacheBasicManager()
-: m_cacheStore(NULL)
+: m_cacheStore(nullptr)
 , m_storageLimit(0)
 , m_cacheStoreName("None")
 , m_dropValue(0.0)
 , m_protectInsert(true)
-, m_contentType(IcnDefault) {
+, m_contentType(IcnDefault)
+, m_fileStore(nullptr)
+{
 }
 
 CacheBasicManager::CacheBasicManager(ConfigWrapper & config)
 : //ModuleManager::ModuleManager(config)
-m_cacheStore(NULL)
+m_cacheStore(nullptr)
 , m_storageLimit(0)
 , m_cacheStoreName("None")
 , m_dropValue(0.0)
 , m_protectInsert(true)
-, m_contentType(IcnDefault) {
+, m_contentType(IcnDefault)
+, m_fileStore(nullptr)
+{
     Config(config);
 }
 
@@ -181,7 +185,8 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     uint64_t byteStart = 0, byteEnd = 0;
     bool header = !interest.GetUnsignedNamedAttribute("ByteRequestStart", byteStart, true);
     header = header & !interest.GetUnsignedNamedAttribute("ByteRequestEnd", byteEnd, true);
-
+    std::vector<uint8_t> data;
+    AcclContentName name = interest.GetAcclName();
     //new data, may need to purge
     if (interest.GetPacketPurpose() & PktType::DATAPKT) {
         if (header) {
@@ -202,9 +207,9 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
             }
 
         } else { //
-            //does the data exist? 	 }
-            setFileData(start, end, data);
-
+            //does the data exist? 	 
+            m_fileStore->SetDataRange(name, byteStart, byteEnd, data);
+         }
         }        //interest matching
         else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
             //if header
@@ -212,7 +217,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
                 CacheHdrHit(interest);
 
             } else {
-                bool exist = getFileData(start, end, buffer[]);
+                bool exist = m_fileStore->GetDataRange(name,byteStart, byteEnd, data);
                 if (exist) {
                     LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
                     interest.SetNamedAttribute("CacheFileHit", 1.0, true);

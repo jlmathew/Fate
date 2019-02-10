@@ -38,6 +38,7 @@ SOFTWARE.
 #include "RangeData.h"
 #include "PacketTypeBase.h"
 #include "NodeManager.h"
+#include "BaseFileStorage.h"
 
 class CacheBasicManager:public ModuleManager
 {
@@ -111,6 +112,7 @@ private:
   CachePacketType m_contentType;
   const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
   AcclContentName m_matchHeaderName;
+  BaseFileStorage * m_fileStore;
 };
 
 #endif

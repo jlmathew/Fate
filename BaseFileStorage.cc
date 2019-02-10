@@ -44,7 +44,7 @@ BaseFileStorage::BaseFileStorage() {}
             fi->buffer = new uint8_t[size];
 	    //not space efficient, just temp to make it work
             fi->validBytes = new uint8_t[size];
-	    for(auto i=0; i< size; i++) {
+	    for(uint32_t i=0; i< size; i++) {
 		fi->validBytes[i]=0;
 	    }
             m_fileMap.insert( std::make_pair(name,fi));
@@ -62,9 +62,11 @@ BaseFileStorage::BaseFileStorage() {}
                 fi->buffer[i]=data[i-start];
                 fi->validBytes[i]= 1;
             }
-            
+           return true; 
         }
+	return false;
     }
+
     bool BaseFileStorage::GetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, std::vector<uint8_t> &data) {
         auto it = m_fileMap.find(name);
         if (it == m_fileMap.end()) { return false; } //not found
@@ -75,14 +77,19 @@ BaseFileStorage::BaseFileStorage() {}
                 if (!(fi->validBytes[i]))
                     return false; //incomplete data
             }
+	    return true;
             
         }   
+	return false;
     }
+
     bool BaseFileStorage::DeleteFile(const dataNameType_t &name) {
         auto it = m_fileMap.find(name);
         if (it != m_fileMap.end()) {
             delete [](it->second->buffer);
             delete [](it->second->validBytes);
             m_fileMap.erase(it);
+	    return true;
         }
+	return false;
     }
