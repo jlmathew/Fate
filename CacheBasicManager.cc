@@ -183,8 +183,8 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     //assume byte requests are file data, non byte requests are headers or single 
     //FIXME TODO is this sufficient to replace 'IcnDefault' cache handling?
     uint64_t byteStart = 0, byteEnd = 0;
-    bool header = !interest.GetUnsignedNamedAttribute("ByteRequestStart", byteStart, true);
-    header = header & !interest.GetUnsignedNamedAttribute("ByteRequestEnd", byteEnd, true);
+    bool header = !interest.GetUnsignedNamedAttribute("ByteStart", byteStart, true);
+    header = header & !interest.GetUnsignedNamedAttribute("ByteEnd", byteEnd, true);
     std::vector<uint8_t> data;
     AcclContentName name = interest.GetAcclName();
     //new data, may need to purge

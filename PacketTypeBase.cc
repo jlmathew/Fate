@@ -88,10 +88,17 @@ PktType::size () const
 bool
 PktType::DeleteNamedAttribute (const dataNameType_t & name, bool tempAttribute)
 {
-  size_t numDel = m_tempAttr.erase (name);
+	size_t numDel=0;
+	if (tempAttribute) {
+         numDel = m_tempAttr.erase (name);
+	} else {
+         numDel = m_namedAttr.erase(name);
+	}	
+
+  numDel = m_tempAttr.erase (name);
+
 
   return numDel ? false : true;
-
   /*
      std::map< dataNameType_t, dataTypeValue_t >::iterator it;
      bool retValue=true;
