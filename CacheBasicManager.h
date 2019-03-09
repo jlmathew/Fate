@@ -112,7 +112,7 @@ private:
   CachePacketType m_contentType;
   const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
   AcclContentName m_matchHeaderName;
-  BaseFileStorage * m_fileStore;
+  BaseFileStorage  m_fileStore;
 };
 
 #endif

@@ -38,7 +38,6 @@ CacheBasicManager::CacheBasicManager()
 , m_dropValue(0.0)
 , m_protectInsert(true)
 , m_contentType(IcnDefault)
-, m_fileStore(nullptr)
 {
 }
 
@@ -50,7 +49,6 @@ m_cacheStore(nullptr)
 , m_dropValue(0.0)
 , m_protectInsert(true)
 , m_contentType(IcnDefault)
-, m_fileStore(nullptr)
 {
     Config(config);
 }
@@ -183,8 +181,10 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     //assume byte requests are file data, non byte requests are headers or single 
     //FIXME TODO is this sufficient to replace 'IcnDefault' cache handling?
     uint64_t byteStart = 0, byteEnd = 0;
-    bool header = !interest.GetUnsignedNamedAttribute("ByteStart", byteStart, true);
-    header = header & !interest.GetUnsignedNamedAttribute("ByteEnd", byteEnd, true);
+    bool nonheader = interest.GetUnsignedNamedAttribute("ByteStart", byteStart);
+    nonheader = nonheader & interest.GetUnsignedNamedAttribute("ByteEnd", byteEnd);
+    uint64_t tmp;
+    bool header = interest.GetUnsignedNamedAttribute("Header", tmp);
     std::vector<uint8_t> data;
     AcclContentName name = interest.GetAcclName();
     //new data, may need to purge
@@ -206,9 +206,15 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
                 PktList.pop_front();
             }
 
-        } else { //
-            //does the data exist? 	 
-            m_fileStore->SetDataRange(name, byteStart, byteEnd, data);
+        } else if (nonheader) { //
+            std::string strData;
+	   bool valid = interest.GetNamedAttribute("DATA", strData);
+	   if (!valid) 
+		   return; //FIXME should we exit here?
+	   for(unsigned int i=0; i<strData.size(); i++) {
+	       data.push_back(strData[i]);
+	   }
+            m_fileStore.SetDataRange(name, byteStart, byteEnd, data);
          }
         }        //interest matching
         else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
@@ -216,20 +222,14 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
             if (header) {
                 CacheHdrHit(interest);
 
-            } else {
-                bool exist = m_fileStore->GetDataRange(name,byteStart, byteEnd, data);
+            } else if (nonheader) {
+		    //FIXME TODO should also work with segment # by itself
+                bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
                 if (exist) {
-                    LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
+                    LOG("Cache Segment Hit %s : byteStart %d \n", interest.GetName().GetFullName().c_str(), byteStart);
                     interest.SetNamedAttribute("CacheFileHit", 1.0, true);
-                    //m_statsHit++;
-                    if (m_stats)
-                        m_stats->IncStats(m_statsFileHit);
-                } else {
-                    if (m_stats)
-                        m_stats->IncStats(m_statsFileMiss);
-
-                }
-            }
+		}
+            } 
         }
 
     }

@@ -33,9 +33,11 @@ SOFTWARE.
 #include <assert.h>
 
 
-BaseFileStorage::BaseFileStorage() {}
+BaseFileStorage::BaseFileStorage() { m_size = 14000;}
+BaseFileStorage::BaseFileStorage(uint32_t size) { m_size = size;}
     BaseFileStorage::~BaseFileStorage() {}
-    
+   
+    void BaseFileStorage::SetMaxSize(uint32_t size) { m_size = size;} 
     void BaseFileStorage::SetFileSize(const dataNameType_t &name, uint32_t size) {
         auto it = m_fileMap.find(name);
         if (it == m_fileMap.end()) {
@@ -54,17 +56,19 @@ BaseFileStorage::BaseFileStorage() {}
     //void SetFileStorageType();  //FIXME TODO change memory or disk based storage
     bool BaseFileStorage::SetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, const std::vector<uint8_t> &data) 
     {
+	    bool retVal = false;
        auto it = m_fileMap.find(name);
-        if (it == m_fileMap.end()) { assert(0);} //should exist
-        else {
+        if (it == m_fileMap.end()) { 
+            SetFileSize(name, m_size );
+        it = m_fileMap.find(name);
+	} //should exist
+	else { retVal = true; }
             auto fi = it->second;
             for(auto i = start; i<=stop; i++) {
                 fi->buffer[i]=data[i-start];
                 fi->validBytes[i]= 1;
-            }
-           return true; 
         }
-	return false;
+	return retVal;
     }
 
     bool BaseFileStorage::GetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, std::vector<uint8_t> &data) {

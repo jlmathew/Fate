@@ -609,7 +609,7 @@ PktType::Serialize (std::vector < uint8_t > &serialData)
     {
       uint16_t type = GlobalAttributeNameRegistration.Register (cit->first);
       dataTypeValue_t dataType = (cit->second);
-
+ 
       //packet attributes are tuples: attribute name-Id/data type/length of data/data
       serial16Helper (serialData, type);
       serial16Helper (serialData, static_cast < uint16_t > (dataType.type));

@@ -225,18 +225,6 @@ StoreGenerator::CreateNewStore (ConfigWrapper & config)
     return store;
     //return new StoreManager< dataName_t, PktType> (config);
   }
-  else if (!name.compare (TypicalCacheStore::IdName ()))
-  {
-    StoreManager *store = new TypicalCacheStore (config);
-
-    //UniqueStore::RegisterStore(store->Name(), store);
-    return store;
-    //return new StoreManager< dataName_t, PktType> (config);
-  }                           /* else if (!name.compare(IPv4RouteStore::IdName())) {
-                                   return new IPv4RouteStore(config);
-                                   } else if (!name.compare(FIBRouteStore::IdName())) {
-                                   return new FIBStore(config);
-                                   } */
   else
   {
     dataNameType_t errorStr = "Invalid Store:";
