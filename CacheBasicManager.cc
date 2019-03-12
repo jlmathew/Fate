@@ -70,7 +70,7 @@ CacheBasicManager::OnInit(UtilityExternalModule * module) {
     if ((m_useStore) && (NULL == m_cacheStore)) {
         m_cacheStore = dynamic_cast<TypicalCacheStore *> ((module->GetDevice()->GetSelfNode())->GetStore(m_cacheStoreName));
     }
-
+    m_myNodeName = (module->GetDevice()->GetSelfNode())->Name();
     //should make this an easy subroutine
     m_statsMiss = createHeirarchicalStatName("CacheMiss");
     m_statsHit = createHeirarchicalStatName("CacheHit");
@@ -190,6 +190,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     //new data, may need to purge
     if (interest.GetPacketPurpose() & PktType::DATAPKT) {
         if (header) {
+            ModuleManager::OnPktIngress(interest); //let utilities judge it
             CacheHdrHit(interest);
             //else if file body
             std::list < std::pair < double, AcclContentName> > PktList;
@@ -224,15 +225,20 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
 
             } else if (nonheader) {
 		    //FIXME TODO should also work with segment # by itself
+		 data.resize(byteEnd-byteStart+1);
                 bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
                 if (exist) {
                     LOG("Cache Segment Hit %s : byteStart %d \n", interest.GetName().GetFullName().c_str(), byteStart);
-                    interest.SetNamedAttribute("CacheFileHit", 1.0, true);
+                    interest.SetNamedAttribute("CacheHit", 1.0, true);
+		    interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+		    std::string strData(data.begin(),data.end());
+	            interest.SetNamedAttribute("DATA", strData);
 		}
             } 
         }
-
-    }
+//check
+	std::cout << "cache file done\n" << interest << "\n";
+}
 
     void
     CacheBasicManager::IcnDefaultAction(PktType & interest) {
@@ -269,6 +275,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
 
         m_PktNames.insert(interest.GetAcclName());
         //std::cout << "\nDATA PKT INSERT:" << interest.GetAcclName();
+        //FIXME TODO fix for storage, should be size of each name
         if (m_PktNames.size() > m_storageLimit) {
             //delete all expired values OR lowest value
             Compute();
@@ -329,6 +336,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
             } else { //drop, so its a miss
                 LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
                 interest.SetNamedAttribute("CacheHit", 1.0, true);
+		interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
                 //m_statsHit++;
                 if (m_stats)
                     m_stats->IncStats(m_statsHit);

@@ -77,9 +77,9 @@ BaseFileStorage::BaseFileStorage(uint32_t size) { m_size = size;}
         else {
             auto fi = it->second;
             for(auto i = start; i<=stop; i++) {
-                data[i-start] = fi->buffer[i];
                 if (!(fi->validBytes[i]))
                     return false; //incomplete data
+                data[i-start] = fi->buffer[i];
             }
 	    return true;
             

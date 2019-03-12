@@ -112,7 +112,8 @@ private:
   CachePacketType m_contentType;
   const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
   AcclContentName m_matchHeaderName;
-  BaseFileStorage  m_fileStore;
+  BaseFileStorage  m_fileStore;  //FIXME TODO set max size of fileStore
+  std::string m_myNodeName;
 };
 
 #endif
