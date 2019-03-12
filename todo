@@ -12,6 +12,7 @@
 9.   Discover (discovery packets, e.g. ifrog, air)
 10.  Forwarding (send tcp/udp/other)
 11.  async packet cache/fetch
+12.  delete callback with file (allow push to other servers)
 ----------------------
 1.  passive caching via server distance from server/qos/lru/lfu/rnd/hash
 2.  increase recording of LRU vs constant LRU (e.g. 10 data items, but one has info on 10 items, other on 20).  Improvement?
@@ -23,6 +24,7 @@
 8. SDN with air/ifrog
 9. http integration, extending IP
 10. layered cache hits (timing), model ssd vs hd vs ram (CPU??)
-11.   
+11. prefetch
+   
 */
 security, passive caching, on-path, off-path
