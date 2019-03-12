@@ -31,6 +31,7 @@ SOFTWARE.
 #include "CacheBasicManager.h"
 #include "UtilityFunctionGenerator.h"
 
+
 CacheBasicManager::CacheBasicManager()
 : m_cacheStore(nullptr)
 , m_storageLimit(0)
@@ -221,7 +222,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
         else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
             //if header
             if (header) {
-                CacheHdrHit(interest);
+                CacheHdrHit(interest); 
 
             } else if (nonheader) {
 		    //FIXME TODO should also work with segment # by itself
@@ -276,6 +277,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
         m_PktNames.insert(interest.GetAcclName());
         //std::cout << "\nDATA PKT INSERT:" << interest.GetAcclName();
         //FIXME TODO fix for storage, should be size of each name
+//need to map name to byte size if filemap, OR by name (if per packet) ...
         if (m_PktNames.size() > m_storageLimit) {
             //delete all expired values OR lowest value
             Compute();
@@ -283,7 +285,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
 
             //GetPacketsByValue (valueRange, PktList);  //Need to test this first
             //or
-
+//TODO fix this up, confusing
             if (PktList.empty()) {
 
                 uint64_t n;
