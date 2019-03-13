@@ -190,7 +190,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     AcclContentName name = interest.GetAcclName();
     //new data, may need to purge
     if (interest.GetPacketPurpose() & PktType::DATAPKT) {
-        if (header) {
+        if (header || (!header && !nonheader)) {
             ModuleManager::OnPktIngress(interest); //let utilities judge it
             CacheHdrHit(interest);
             //else if file body
@@ -221,7 +221,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
         }        //interest matching
         else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
             //if header
-            if (header) {
+            if (header || (!header && !nonheader)) {
                 CacheHdrHit(interest); 
 
             } else if (nonheader) {
@@ -337,8 +337,46 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
                     m_stats->IncStats(m_statsHitExpired);
             } else { //drop, so its a miss
                 LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
-                interest.SetNamedAttribute("CacheHit", 1.0, true);
-		interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+
+		//Get DATA from cached packet
+		//FIXME TODO jlm
+		//This should be replaced by white/black/red chained lists
+		PktType newPacket;
+    		bool stat = m_cacheStore->ExistData(interest.GetAcclName(), newPacket);
+		if (stat) {  //cachehit
+                	interest.SetNamedAttribute("CacheHit", 1.0, true);
+			interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+			std::string datavctr;
+			//RED LIST Copy #segments, byte range and size, etc
+			//For non headers, non segment packets (typical ICN)
+			bool data = newPacket.GetNamedAttribute("DATA", datavctr);
+			if (data)
+			{
+				interest.SetNamedAttribute("DATA", datavctr);
+			}
+			uint64_t value;  bool exists;
+			//Segments redlist (for headers with segments
+			exists = newPacket.GetUnsignedNamedAttribute("Segments", value);
+			if (exists)
+			{
+				interest.SetUnsignedNamedAttribute("Segments", value);
+			}
+			//TotalSize redList
+						exists = newPacket.GetUnsignedNamedAttribute("TotalSize", value);
+			if (exists)
+			{
+				interest.SetUnsignedNamedAttribute("TotalSize", value);
+			}
+			//SegSize redlist
+						exists = newPacket.GetUnsignedNamedAttribute("SegSize", value);
+			if (exists)
+			{
+				interest.SetUnsignedNamedAttribute("SegSize", value);
+			}
+
+
+		}
+
                 //m_statsHit++;
                 if (m_stats)
                     m_stats->IncStats(m_statsHit);
