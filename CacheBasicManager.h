@@ -63,7 +63,7 @@ public:
   virtual bool AddConfig (UtilityHandlerBase * uc, uint16_t position = 0);
 
   virtual void CacheHdrHit(PktType &interest);
-  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
+  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList, bool useIcnFileLimit=false);
 
   //delete Configs by name or number
 
@@ -114,6 +114,7 @@ private:
   AcclContentName m_matchHeaderName;
   BaseFileStorage  m_fileStore;  //FIXME TODO set max size of fileStore
   std::string m_myNodeName;
+  bool m_deleteByValue;
 };
 
 #endif

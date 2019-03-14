@@ -1,11 +1,8 @@
 /* TODO
 1.   Create fake red/black/white list to remove/copy desired fields
-2.   Header files should be cached, there is no GetData (get Data field) to get Data field
-3.   Add cache check via total file size OR num files.   Purge when overfull.
 4.   Check if overfull, Delete works correctly.
 4b.  No header attribute, still work?
 ------------
-5.   Serve multiple files (make sure server can serve more than 1
 6.   merge forwarding code ...
 7.   Fix LFU/LRU to use normalizer code ... verify it works when updating (e.g. delete, add)
 8.   Packet buffer for TX (fifo, then evaluate).  send tcp/udp.
@@ -13,10 +10,11 @@
 10.  Forwarding (send tcp/udp/other)
 11.  async packet cache/fetch
 12.  delete callback with file (allow push to other servers)
+13.  Make a strict IPv4 forwarder (non ns3 dependant)
 ----------------------
 1.  passive caching via server distance from server/qos/lru/lfu/rnd/hash
 2.  increase recording of LRU vs constant LRU (e.g. 10 data items, but one has info on 10 items, other on 20).  Improvement?
-3.  Security: record requested (outstanding) requests vs anonymous data (cache poisoning)
+3.  Security: record requested (outstanding) requests vs anonymous data (cache poisoning). validate checksum.
 4.  On path caching improvments.  move towards server (need tx buffer)
 5.  off path (forwarded to cache), allow DHT and larger cache.   DHT and hash larger cache.
 6. punch-ticket 

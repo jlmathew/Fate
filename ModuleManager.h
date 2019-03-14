@@ -100,7 +100,7 @@ public:
   virtual void LogStats ();
   virtual bool LocalStoreDelete (const AcclContentName & name);
 
-  virtual void GetPacketsByValue (const RangeData < double >&rng, std::list < AcclContentName > &list);
+  virtual void GetPacketsByValue (const RangeData < double >&rng, std::list < std::pair< double, AcclContentName> > &list);
   virtual void GetLowestNPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &list);
 
   virtual void GetDebugInfo(PktType &packet) const;

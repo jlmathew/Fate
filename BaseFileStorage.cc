@@ -33,14 +33,17 @@ SOFTWARE.
 #include <assert.h>
 
 
-BaseFileStorage::BaseFileStorage() { m_size = 14000;}
-BaseFileStorage::BaseFileStorage(uint32_t size) { m_size = size;}
-    BaseFileStorage::~BaseFileStorage() {}
+BaseFileStorage::BaseFileStorage(): m_totalBytes(0)
+{ }
+
+BaseFileStorage::~BaseFileStorage() {}
    
-    void BaseFileStorage::SetMaxSize(uint32_t size) { m_size = size;} 
+    uint64_t BaseFileStorage::GetTotalBytesUsed() { return m_totalBytes;}
+    
     void BaseFileStorage::SetFileSize(const dataNameType_t &name, uint32_t size) {
         auto it = m_fileMap.find(name);
         if (it == m_fileMap.end()) {
+	    m_totalBytes += size;
             FileInfo_t *fi = new FileInfo_t;
             fi->size = size;
             fi->buffer = new uint8_t[size];
@@ -59,7 +62,7 @@ BaseFileStorage::BaseFileStorage(uint32_t size) { m_size = size;}
 	    bool retVal = false;
        auto it = m_fileMap.find(name);
         if (it == m_fileMap.end()) { 
-            SetFileSize(name, m_size );
+            SetFileSize(name, data.size()); //m_size );
         it = m_fileMap.find(name);
 	} //should exist
 	else { retVal = true; }
@@ -93,6 +96,7 @@ BaseFileStorage::BaseFileStorage(uint32_t size) { m_size = size;}
             delete [](it->second->buffer);
             delete [](it->second->validBytes);
             m_fileMap.erase(it);
+	    m_totalBytes -= (it->second->size);
 	    return true;
         }
 	return false;

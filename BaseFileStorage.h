@@ -53,15 +53,15 @@ struct FileInfo_t
     uint8_t *buffer;
     //wasteful, but quick
     uint8_t *validBytes;
+    //should we add header bytes, to consolidate where we get bytes used?
     
 };
 class BaseFileStorage
 {
     public:
     BaseFileStorage();
-    BaseFileStorage(uint32_t);
     virtual ~BaseFileStorage();
-    void SetMaxSize(uint32_t size);
+    uint64_t GetTotalBytesUsed();
     
     void SetFileSize(const dataNameType_t &name, uint32_t size);
     //void SetFileStorageType();  //FIXME TODO change memory or disk based storage
@@ -71,7 +71,7 @@ class BaseFileStorage
     //bool DeletePartialFile(const &name);
 private:
     std::map< dataNameType_t, FileInfo_t *> m_fileMap;
-    uint32_t m_size;
+    uint64_t m_totalBytes;
         
 
 };

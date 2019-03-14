@@ -361,7 +361,7 @@ ModuleManager::retNumUtilityBlocks ()
 
 
 void
-ModuleManager::GetPacketsByValue (const RangeData < double >&rng, std::list < AcclContentName > &list)
+ModuleManager::GetPacketsByValue (const RangeData < double >&rng, std::list < std::pair< double, AcclContentName> > &list)
 {
   UtilityHandlerBase *lastBlock = m_utilityEval.back ();
 
@@ -372,7 +372,7 @@ ModuleManager::GetPacketsByValue (const RangeData < double >&rng, std::list < Ac
 
       if (rng.IsInRange (rngVal))
         {
-          list.push_back (*cit);
+          list.push_back (std::make_pair(rngVal,*cit));
         }
     }
 
@@ -425,8 +425,6 @@ ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< doubl
     {
       double rngVal = lastBlock->Value (*cit);
       orderQueue.push (make_pair (rngVal, *cit));
-    //std::cout << "\n(" << *cit << ")";
-    //Print(std::cout, *cit, rngVal); 
 
     }
 
@@ -468,7 +466,6 @@ ModuleManager::LocalStoreDelete(const std::list < std::pair < double, AcclConten
         {
           (*it)->DoDelete (name);
         }
-      m_PktNames.erase (name);
 
     }
 
