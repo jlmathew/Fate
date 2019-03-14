@@ -166,7 +166,6 @@ CacheBasicManager::OnControlPktIngress(PktType & control) {
 
 void
 CacheBasicManager::OnDataInterestPktIngress(PktType & interest) {
-	return;
 	
   switch (m_contentType) {
   case IcnDefault:
@@ -197,9 +196,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     if (header || (!header && !nonheader)) {
       ModuleManager::OnPktIngress(interest); //let utilities judge it
       CacheHdrHit(interest);
-      //else if file body
       std::list < std::pair < double, AcclContentName> > PktList;
-//FIXME TODO header (no seg) has size, no header/seg is per packet, but nonheader is segments
       CacheDataHandler(interest, PktList, header || nonheader);
       LocalStoreDelete(PktList);
       FileStoreDelete(PktList);
@@ -210,6 +207,12 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       bool valid = interest.GetNamedAttribute("DATA", strData);
       if (!valid)
         return; //FIXME should we exit here?
+      
+      //only store if we have seen header before
+      auto it = m_PktNames.find(interest.GetAcclName());
+      if (m_PktNames.end() == it)
+	     return;
+
       for(unsigned int i=0; i<strData.size(); i++) {
         data.push_back(strData[i]);
       }
@@ -218,12 +221,10 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
     }
   }        //interest matching
   else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
-    //if header
     if (header || (!header && !nonheader)) {
       CacheHdrHit(interest);
 
     } else if (nonheader) {
-      //FIXME TODO should also work with segment # by itself
       data.resize(byteEnd-byteStart+1);
       bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
       if (exist) {
@@ -260,7 +261,7 @@ CacheBasicManager::IcnDefaultAction(PktType & interest) {
 //insert new content, evaluate it, and purge low/least value content
 
 void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList, bool useIcnFileLimit) {
-
+return;
 
   //insert file if not protected
   if (!m_protectInsert) {
@@ -268,9 +269,6 @@ void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair
       m_cacheStore->SetData(interest.GetAcclName(), interest); }
     m_PktNames.insert(interest.GetAcclName());
   }
-  //std::cout << "\nDATA PKT INSERT:" << interest.GetAcclName();
-  //FIXME TODO fix for storage, should be size of each name
-//need to map name to byte size if filemap, OR by name (if per packet) ...
   bool exceedLimit=true;
 
   Compute();
@@ -289,18 +287,16 @@ void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair
 
       if (m_deleteByValue) {
          GetPacketsByValue (valueRange, PktList);  //Need to test this first
-	 //FIXME TODO
-	 assert(0);
       } else {
-        GetLowestNPackets(1, PktList); //or lowest Packet
+         GetLowestNPackets(1, PktList); //or lowest Packet
       }
     }
   }
 
   //protected insertion
   if (m_protectInsert) {
-    if (m_useStore)
-      m_cacheStore->SetData(interest.GetAcclName(), interest);
+    if (m_useStore) {
+      m_cacheStore->SetData(interest.GetAcclName(), interest);}
     m_PktNames.insert(interest.GetAcclName());
   }
 }
