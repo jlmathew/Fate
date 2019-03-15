@@ -62,8 +62,7 @@ BaseFileStorage::~BaseFileStorage() {}
 	    bool retVal = false;
        auto it = m_fileMap.find(name);
         if (it == m_fileMap.end()) { 
-            SetFileSize(name, data.size()); //m_size );
-        it = m_fileMap.find(name);
+            return retVal; //should not occur
 	} //should exist
 	else { retVal = true; }
             auto fi = it->second;

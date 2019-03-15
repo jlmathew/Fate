@@ -166,7 +166,6 @@ CacheBasicManager::OnControlPktIngress(PktType & control) {
 
 void
 CacheBasicManager::OnDataInterestPktIngress(PktType & interest) {
-	
   switch (m_contentType) {
   case IcnDefault:
     IcnDefaultAction(interest);
@@ -189,20 +188,25 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
   nonheader = nonheader & interest.GetUnsignedNamedAttribute("ByteEnd", byteEnd);
   uint64_t tmp;
   bool header = interest.GetUnsignedNamedAttribute("Header", tmp);
-  std::vector<uint8_t> data;
   AcclContentName name = interest.GetAcclName();
   //new data, may need to purge
   if (interest.GetPacketPurpose() & PktType::DATAPKT) {
     if (header || (!header && !nonheader)) {
       ModuleManager::OnPktIngress(interest); //let utilities judge it
       CacheHdrHit(interest);
+      //Create file entries, header has info
+      uint64_t totalsize=0;
+      bool sizeexist = interest.GetUnsignedNamedAttribute("TotalSize", totalsize);
+      if (sizeexist)
+      	m_fileStore.SetFileSize(interest.GetAcclName(), totalsize);
+
       std::list < std::pair < double, AcclContentName> > PktList;
       CacheDataHandler(interest, PktList, header || nonheader);
       LocalStoreDelete(PktList);
       FileStoreDelete(PktList);
       PktList.clear();
 
-    } else if (nonheader) { //
+    } else if (nonheader) { 
       std::string strData;
       bool valid = interest.GetNamedAttribute("DATA", strData);
       if (!valid)
@@ -213,6 +217,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       if (m_PktNames.end() == it)
 	     return;
 
+      std::vector<uint8_t> data;
       for(unsigned int i=0; i<strData.size(); i++) {
         data.push_back(strData[i]);
       }
@@ -225,6 +230,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       CacheHdrHit(interest);
 
     } else if (nonheader) {
+      std::vector<uint8_t> data;
       data.resize(byteEnd-byteStart+1);
       bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
       if (exist) {
@@ -261,8 +267,8 @@ CacheBasicManager::IcnDefaultAction(PktType & interest) {
 //insert new content, evaluate it, and purge low/least value content
 
 void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList, bool useIcnFileLimit) {
-return;
 
+m_protectInsert=false;
   //insert file if not protected
   if (!m_protectInsert) {
     if (m_useStore) {
@@ -270,6 +276,7 @@ return;
     m_PktNames.insert(interest.GetAcclName());
   }
   bool exceedLimit=true;
+
 
   Compute();
   RangeData < double >valueRange(0.0, m_dropValue);
