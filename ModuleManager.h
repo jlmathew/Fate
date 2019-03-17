@@ -116,7 +116,10 @@ protected:
 
   GlobalModuleLog *m_log;
 
+  //This is module recording which content is cached (store)
   std::set < AcclContentName > m_PktNames;
+  //This is module tracking which content is tracked in utilities
+  std::set < AcclContentName > m_PktNameTracked;
   StorageClass_t m_storageMethod;
 
   NodeManager * m_myNodeRootModule;

@@ -359,7 +359,7 @@ ModuleManager::retNumUtilityBlocks ()
   return m_utilityEval.size ();
 }
 
-
+//obsolete??
 void
 ModuleManager::GetPacketsByValue (const RangeData < double >&rng, std::list < std::pair< double, AcclContentName> > &list)
 {
@@ -415,6 +415,7 @@ void
 ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &mylist)
 {
   UtilityHandlerBase *lastBlock = m_utilityEval.back ();
+
 
   std::set < AcclContentName >::const_iterator cit = m_PktNames.begin ();
   typedef std::pair<double, AcclContentName > P;

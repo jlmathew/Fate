@@ -10,7 +10,7 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The only restriction to usage is to fully credit the original work, in some manner, 
+The only restriction to usage is to fully credit the original work, in some manner,
 such as by project name, website, academic reference, documentation, and/or other
 non obscured means.
 Exceptions to this are allowed by prior permission from the originator (James Mathewson)
@@ -37,66 +37,72 @@ BaseFileStorage::BaseFileStorage(): m_totalBytes(0)
 { }
 
 BaseFileStorage::~BaseFileStorage() {}
-   
-    uint64_t BaseFileStorage::GetTotalBytesUsed() { return m_totalBytes;}
-    
-    void BaseFileStorage::SetFileSize(const dataNameType_t &name, uint32_t size) {
-        auto it = m_fileMap.find(name);
-        if (it == m_fileMap.end()) {
-	    m_totalBytes += size;
-            FileInfo_t *fi = new FileInfo_t;
-            fi->size = size;
-            fi->buffer = new uint8_t[size];
-	    //not space efficient, just temp to make it work
-            fi->validBytes = new uint8_t[size];
-	    for(uint32_t i=0; i< size; i++) {
-		fi->validBytes[i]=0;
-	    }
-            m_fileMap.insert( std::make_pair(name,fi));
-        }
-        
-    }
-    //void SetFileStorageType();  //FIXME TODO change memory or disk based storage
-    bool BaseFileStorage::SetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, const std::vector<uint8_t> &data) 
-    {
-	    bool retVal = false;
-       auto it = m_fileMap.find(name);
-        if (it == m_fileMap.end()) { 
-            return retVal; //should not occur
-	} //should exist
-	else { retVal = true; }
-            auto fi = it->second;
-            for(auto i = start; i<=stop; i++) {
-                fi->buffer[i]=data[i-start];
-                fi->validBytes[i]= 1;
-        }
-	return retVal;
-    }
 
-    bool BaseFileStorage::GetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, std::vector<uint8_t> &data) {
-        auto it = m_fileMap.find(name);
-        if (it == m_fileMap.end()) { return false; } //not found
-        else {
-            auto fi = it->second;
-            for(auto i = start; i<=stop; i++) {
-                if (!(fi->validBytes[i]))
-                    return false; //incomplete data
-                data[i-start] = fi->buffer[i];
-            }
-	    return true;
-            
-        }   
-	return false;
-    }
+uint64_t BaseFileStorage::GetTotalBytesUsed() {
+  return m_totalBytes;
+}
 
-    bool BaseFileStorage::DeleteFile(const dataNameType_t &name) {
-        auto it = m_fileMap.find(name);
-        if (it != m_fileMap.end()) {
-            delete [](it->second->buffer);
-            delete [](it->second->validBytes);
-            m_fileMap.erase(it);
-	    m_totalBytes -= (it->second->size);
-	    return true;
-        }
-	return false;
+void BaseFileStorage::SetFileSize(const dataNameType_t &name, uint32_t size) {
+  auto it = m_fileMap.find(name);
+  if (it == m_fileMap.end()) {
+    m_totalBytes += size;
+    FileInfo_t *fi = new FileInfo_t;
+    fi->size = size;
+    fi->buffer = new uint8_t[size];
+    //not space efficient, just temp to make it work
+    fi->validBytes = new uint8_t[size];
+    for(uint32_t i=0; i< size; i++) {
+      fi->validBytes[i]=0;
     }
+    m_fileMap.insert( std::make_pair(name,fi));
+  }
+
+}
+//void SetFileStorageType();  //FIXME TODO change memory or disk based storage
+bool BaseFileStorage::SetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, const std::vector<uint8_t> &data)
+{
+  bool retVal = false;
+  auto it = m_fileMap.find(name);
+  if (it == m_fileMap.end()) {
+    return retVal; //should not occur
+  } //should exist
+  else {
+    retVal = true;
+  }
+  auto fi = it->second;
+  for(auto i = start; i<=stop; i++) {
+    fi->buffer[i]=data[i-start];
+    fi->validBytes[i]= 1;
+  }
+  return retVal;
+}
+
+bool BaseFileStorage::GetDataRange(const dataNameType_t &name,uint32_t start, uint32_t stop, std::vector<uint8_t> &data) {
+  auto it = m_fileMap.find(name);
+  if (it == m_fileMap.end()) {
+    return false;  //not found
+  }
+  else {
+    auto fi = it->second;
+    for(auto i = start; i<=stop; i++) {
+      if (!(fi->validBytes[i]))
+        return false; //incomplete data
+      data[i-start] = fi->buffer[i];
+    }
+    return true;
+
+  }
+  return false;
+}
+
+bool BaseFileStorage::DeleteFile(const dataNameType_t &name) {
+  auto it = m_fileMap.find(name);
+  if (it != m_fileMap.end()) {
+    delete [](it->second->buffer);
+    delete [](it->second->validBytes);
+    m_fileMap.erase(it);
+    m_totalBytes -= (it->second->size);
+    return true;
+  }
+  return false;
+}

@@ -109,6 +109,7 @@ CacheBasicManager::Config(ConfigWrapper & config) {
     else
       m_contentType = IcnDefault;
   }
+  m_lowerCacheWatermark = config.GetAttribute("cacheLowerWaterMark", m_storageLimit);
 }
 
 void
@@ -198,24 +199,31 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       uint64_t totalsize=0;
       bool sizeexist = interest.GetUnsignedNamedAttribute("TotalSize", totalsize);
       if (sizeexist)
-      	m_fileStore.SetFileSize(interest.GetAcclName(), totalsize);
+        m_fileStore.SetFileSize(interest.GetAcclName(), totalsize);
 
       std::list < std::pair < double, AcclContentName> > PktList;
-      CacheDataHandler(interest, PktList, header || nonheader);
-      LocalStoreDelete(PktList);
-      FileStoreDelete(PktList);
+      //FIXME TODO need to loop until size in range
+      if (header || nonheader) {
+        PurgeBytesContent(interest);
+      }
+      else {
+        PurgeICNContent(interest);
+      }
+      //CacheDataHandler(interest, PktList, header || nonheader);
+      //LocalStoreDelete(PktList);
+      //FileStoreDelete(PktList);
       PktList.clear();
 
-    } else if (nonheader) { 
+    } else if (nonheader) {
       std::string strData;
       bool valid = interest.GetNamedAttribute("DATA", strData);
       if (!valid)
         return; //FIXME should we exit here?
-      
+
       //only store if we have seen header before
       auto it = m_PktNames.find(interest.GetAcclName());
       if (m_PktNames.end() == it)
-	     return;
+        return;
 
       std::vector<uint8_t> data;
       for(unsigned int i=0; i<strData.size(); i++) {
@@ -254,56 +262,112 @@ CacheBasicManager::IcnDefaultAction(PktType & interest) {
 
   //new data, may need to purge
   if (interest.GetPacketPurpose() & PktType::DATAPKT) {
-    std::list < std::pair < double, AcclContentName> > PktList;
-
-    CacheDataHandler(interest, PktList, false);
-    LocalStoreDelete(PktList);
+    PurgeICNContent(interest);
   }            //interest matching
   else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
     CacheHdrHit(interest);
   }
 }
 
+void CacheBasicManager::PurgeICNContent(PktType &pkt)
+{
+  if (!m_useStore) {
+    return;
+  }
+
+  if ((m_PktNames.size()+(int) m_protectInsert)  > m_storageLimit) {
+    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
+    //Compute();
+    CacheDataHandler(pkt, PktList);
+    GetObsoleteList(PktList, obsoletePktList);
+    if (obsoletePktList.size()) {
+      LocalStoreDelete(obsoletePktList, false);
+    }
+    //Delete extra up to lower watermark
+    if (m_PktNames.size() > m_lowerCacheWatermark) {
+      auto itb = PktList.begin();
+      auto ite = itb;
+      advance(ite, m_PktNames.size()-m_lowerCacheWatermark);
+      std::list < std::pair < double, AcclContentName> > PktListWm (itb, ite); //itb+m_PktNames.size()-m_lowerCacheWaterMark);
+      LocalStoreDelete(PktListWm, false);
+    }
+
+  }
+
+}
+void CacheBasicManager::PurgeBytesContent(PktType &pkt)
+{
+  if (!m_useStore) {
+    return;
+  }
+  uint64_t totalSize=0;
+  pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
+  if ( (m_fileStore.GetTotalBytesUsed()+(!m_protectInsert)*totalSize) > (m_storageLimit)) {
+    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
+    //Compute();
+    CacheDataHandler(pkt, PktList);
+    GetObsoleteList(PktList, obsoletePktList);
+    if (obsoletePktList.size()) {
+      LocalStoreDelete(obsoletePktList, true);
+    }
+    //Delete extra up to lower watermark
+    while (( m_fileStore.GetTotalBytesUsed()-m_protectInsert*totalSize) > (m_storageLimit) && PktList.size()) {
+      auto first = PktList.begin();
+      auto last = first;
+      ++last;
+      std::list < std::pair < double, AcclContentName> > PktListWm (first, last);
+      PktList.erase(first);
+      LocalStoreDelete(PktListWm, true);
+    }
+  }
+
+}
+
+
+
+//Get all ranks, then purge FIXME TODO.
 //insert new content, evaluate it, and purge low/least value content
+void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList) {
 
-void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList, bool useIcnFileLimit) {
-
-m_protectInsert=false;
   //insert file if not protected
   if (!m_protectInsert) {
     if (m_useStore) {
-      m_cacheStore->SetData(interest.GetAcclName(), interest); }
+      m_cacheStore->SetData(interest.GetAcclName(), interest);
+    }
     m_PktNames.insert(interest.GetAcclName());
   }
-  bool exceedLimit=true;
 
 
+
+  //RangeData < double >valueRange(0.0, m_dropValue);
   Compute();
-  RangeData < double >valueRange(0.0, m_dropValue);
-  //check until storage is valid
-  while (exceedLimit) {
-    if (useIcnFileLimit) {
-	    //FIXME TODO should take into account file size if NOT already inserted
-      exceedLimit = ( m_fileStore.GetTotalBytesUsed() > (m_storageLimit));
-    } else {
-      exceedLimit = (m_PktNames.size() > m_storageLimit);
-    }
+  GetLowestNPackets (m_PktNames.size(), PktList);  //Need to test this first
 
-    if (exceedLimit) {
-      //delete all expired values OR lowest value
 
-      if (m_deleteByValue) {
-         GetPacketsByValue (valueRange, PktList);  //Need to test this first
-      } else {
-         GetLowestNPackets(1, PktList); //or lowest Packet
-      }
-    }
+  //delete all expired values OR lowest value
+  /*switch (TypeOfPurge) {
+  case (useIcnCountLimit):
+  {
+    GetLowestNPackets (m_PktNames.size(), PktList);  //Need to test this first
+    break;
   }
+  case (useRangeLimit):
+  {
+    GetPacketsByValue (valueRange, PktList);  //Need to test this first
+    break;
+  }
+
+
+  default:
+    assert(0);
+    break;
+  }*/
 
   //protected insertion
   if (m_protectInsert) {
     if (m_useStore) {
-      m_cacheStore->SetData(interest.GetAcclName(), interest);}
+      m_cacheStore->SetData(interest.GetAcclName(), interest);
+    }
     m_PktNames.insert(interest.GetAcclName());
   }
 }
@@ -401,34 +465,60 @@ CacheBasicManager::StoreActionsDone(const std::list < StoreEvents > &list) {
 //StoreActionsDone JLM FIXME
 
 void
-CacheBasicManager::LocalStoreDelete(const std::list < std::pair < double, AcclContentName> > &list) {
+CacheBasicManager::LocalStoreDelete(const std::list < std::pair < double, AcclContentName> > &list, bool isFile) {
   ModuleManager::LocalStoreDelete(list);
 
   for (auto itl = list.begin(); itl != list.end(); itl++) {
-    AcclContentName name = itl->second;
-    //erase store value
-    if (m_useStore) {
-      m_cacheStore->EraseData(name); }
-    
-    std::cout << "Erased " << name << " with a value of " << itl->first << "\n";
-     
+    {
+      AcclContentName name = itl->second;
+      //erase store value
+      m_cacheStore->EraseData(name);
+      if (isFile) {
+        m_fileStore.DeleteFile(name);
+      }
+
+      std::cout << "Erased " << name << " with a value of " << name << "\n";
+
       m_PktNames.erase (name);
+    }
   }
   //JLM FIX ME need to send out store delete event, or store insert event, as appropriate
   //we can also log deletions with valuations
 
 }
 
+
+
+//copy obsolete/expired content into new list
 void
+CacheBasicManager::GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist ) {
+
+
+  RangeData < double >valueRange(0.0, m_dropValue);
+  for (auto itl = list.begin(); itl != list.end(); itl++) {
+    if (!valueRange.IsInRange(itl->first))
+      return; //values are sorted numerically, we dont need to check each
+
+    AcclContentName name = itl->second;
+    //erase store value, pop onto new list
+    olist.push_back(*itl);
+    itl = list.erase(itl);
+
+  }
+}
+
+//JLM FIX ME need to send out store delete event, or store insert event, as appropriate
+//we can also log deletions with valuations
+
+
+/*void
 CacheBasicManager::FileStoreDelete(const std::list < std::pair < double, AcclContentName> > &list) {
 
   for (auto itl = list.begin(); itl != list.end(); itl++) {
     AcclContentName name = itl->second;
-    if (m_useStore)
-      m_cacheFileStore->EraseData(name);
 
   }
-  //JLM FIX ME need to send out store delete event, or store insert event, as appropriate
-  //we can also log deletions with valuations
+  }*/
+//JLM FIX ME need to send out store delete event, or store insert event, as appropriate
+//we can also log deletions with valuations
 
-}

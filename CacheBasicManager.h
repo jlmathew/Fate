@@ -50,6 +50,7 @@ public:
 
     maxTypes
   };
+
   CacheBasicManager ();
 
   CacheBasicManager (ConfigWrapper & config);
@@ -62,8 +63,9 @@ public:
 
   virtual bool AddConfig (UtilityHandlerBase * uc, uint16_t position = 0);
 
+  virtual void GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist );
   virtual void CacheHdrHit(PktType &interest);
-  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList, bool useIcnFileLimit=false);
+  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
 
   //delete Configs by name or number
 
@@ -81,8 +83,8 @@ public:
   void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
 
   void StoreActionsDone (const std::list < StoreEvents > &list);
-  void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
-  void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
+  void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list, bool isFile);
+  //void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
   void DoStoreActions (const std::list < StoreEvents > &list);
 
 private:
@@ -93,9 +95,12 @@ private:
   void OnDebugPktIngress (PktType & debug);
   void IcnDefaultAction(PktType &pkt);
   void IcnFileAction(PktType &pkt);
+  //purge by number of files, aka ICN
+  void PurgeICNContent(PktType &pkt);
+  void PurgeBytesContent(PktType &pkt);
   
   TypicalCacheStore *m_cacheStore;
-  TypicalCacheStore *m_cacheFileStore;
+  //TypicalCacheStore *m_cacheFileStore;
   uint64_t m_storageLimit;
 
   std::string m_cacheStoreName;
@@ -115,6 +120,7 @@ private:
   BaseFileStorage  m_fileStore;  //FIXME TODO set max size of fileStore
   std::string m_myNodeName;
   bool m_deleteByValue;
+  uint32_t m_lowerCacheWatermark;
 };
 
 #endif
