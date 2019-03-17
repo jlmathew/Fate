@@ -209,10 +209,6 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       else {
         PurgeICNContent(interest);
       }
-      //CacheDataHandler(interest, PktList, header || nonheader);
-      //LocalStoreDelete(PktList);
-      //FileStoreDelete(PktList);
-      PktList.clear();
 
     } else if (nonheader) {
       std::string strData;
@@ -302,7 +298,7 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
   }
   uint64_t totalSize=0;
   pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
-  if ( (m_fileStore.GetTotalBytesUsed()+(!m_protectInsert)*totalSize) > (m_storageLimit)) {
+  if ( (m_fileStore.GetTotalBytesUsed()-(m_protectInsert)*totalSize) > (m_storageLimit)) {
     std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
     //Compute();
     CacheDataHandler(pkt, PktList);
@@ -319,6 +315,11 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
       PktList.erase(first);
       LocalStoreDelete(PktListWm, true);
     }
+  } else {  //room in cache
+      m_cacheStore->SetData(pkt.GetAcclName(), pkt);
+    m_PktNames.insert(pkt.GetAcclName());
+
+
   }
 
 }
@@ -343,25 +344,6 @@ void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair
   Compute();
   GetLowestNPackets (m_PktNames.size(), PktList);  //Need to test this first
 
-
-  //delete all expired values OR lowest value
-  /*switch (TypeOfPurge) {
-  case (useIcnCountLimit):
-  {
-    GetLowestNPackets (m_PktNames.size(), PktList);  //Need to test this first
-    break;
-  }
-  case (useRangeLimit):
-  {
-    GetPacketsByValue (valueRange, PktList);  //Need to test this first
-    break;
-  }
-
-
-  default:
-    assert(0);
-    break;
-  }*/
 
   //protected insertion
   if (m_protectInsert) {

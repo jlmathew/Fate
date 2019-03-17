@@ -36,6 +36,7 @@ SOFTWARE.
 BaseFileStorage::BaseFileStorage(): m_totalBytes(0)
 { }
 
+//FIXME TODO leaks, need to clear out each file buffer
 BaseFileStorage::~BaseFileStorage() {}
 
 uint64_t BaseFileStorage::GetTotalBytesUsed() {
