@@ -86,8 +86,9 @@ bool BaseFileStorage::GetDataRange(const dataNameType_t &name,uint32_t start, ui
   else {
     auto fi = it->second;
     for(auto i = start; i<=stop; i++) {
-      if (!(fi->validBytes[i]))
+      if (!(fi->validBytes[i])) {
         return false; //incomplete data
+      }
       data[i-start] = fi->buffer[i];
     }
     return true;

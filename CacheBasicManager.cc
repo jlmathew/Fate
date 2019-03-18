@@ -76,9 +76,11 @@ CacheBasicManager::OnInit(UtilityExternalModule * module) {
   m_myNodeName = (module->GetDevice()->GetSelfNode())->Name();
   //should make this an easy subroutine
   m_statsMiss = createHeirarchicalStatName("CacheMiss");
+  m_statsMissNotFound = createHeirarchicalStatName("CacheMissNotFound");
   m_statsHit = createHeirarchicalStatName("CacheHit");
   m_statsHitExpired = createHeirarchicalStatName("CacheHitExpired");
   m_stats->SetStats(m_statsMiss, (uint64_t) 0);
+  m_stats->SetStats(m_statsMissNotFound, (uint64_t) 0);
   m_stats->SetStats(m_statsHit, (uint64_t) 0);
   m_stats->SetStats(m_statsHitExpired, (uint64_t) 0);
   return true;
@@ -191,9 +193,9 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
   bool header = interest.GetUnsignedNamedAttribute("Header", tmp);
   AcclContentName name = interest.GetAcclName();
   //new data, may need to purge
+  ModuleManager::OnPktIngress(interest); //let utilities judge it
   if (interest.GetPacketPurpose() & PktType::DATAPKT) {
     if (header || (!header && !nonheader)) {
-      ModuleManager::OnPktIngress(interest); //let utilities judge it
       CacheHdrHit(interest);
       //Create file entries, header has info
       uint64_t totalsize=0;
@@ -254,14 +256,13 @@ void
 CacheBasicManager::IcnDefaultAction(PktType & interest) {
   ModuleManager::OnPktIngress(interest); //let utilities judge it
 
-  //std::cout << "cb2 pkt is " << interest;
 
   //new data, may need to purge
   if (interest.GetPacketPurpose() & PktType::DATAPKT) {
     PurgeICNContent(interest);
   }            //interest matching
   else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
-    CacheHdrHit(interest);
+    CacheIcnHit(interest);
   }
 }
 
@@ -288,6 +289,9 @@ void CacheBasicManager::PurgeICNContent(PktType &pkt)
       LocalStoreDelete(PktListWm, false);
     }
 
+  } else {
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
+    m_PktNames.insert(pkt.GetAcclName());
   }
 
 }
@@ -316,7 +320,7 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
       LocalStoreDelete(PktListWm, true);
     }
   } else {  //room in cache
-      m_cacheStore->SetData(pkt.GetAcclName(), pkt);
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
     m_PktNames.insert(pkt.GetAcclName());
 
 
@@ -354,6 +358,72 @@ void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair
   }
 }
 
+void CacheBasicManager::CacheIcnHit(PktType & interest) {
+  PktType fakePkt;
+
+  //only do this for interest or data packets
+  bool found = (m_PktNames.find(interest.GetAcclName()) != m_PktNames.end());
+
+  if (found) { //give interest packet LOW value
+    //give low priority, modify packet
+    //std::cout << "\nInterest Update:" << interest.GetAcclName ();
+    Compute(interest.GetAcclName());
+    double value = Value(interest.GetAcclName());
+
+    if (value <= m_dropValue) {
+      LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());
+      interest.SetNamedAttribute("CacheHit", 0.0, true);
+      //m_statsHitExpired++;
+      if (m_stats)
+        m_stats->IncStats(m_statsHitExpired);
+    } else {
+      PktType newPacket;
+      bool stat = m_cacheStore->ExistData(interest.GetAcclName(), newPacket);
+      if (stat) {  //cachehit
+        LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
+
+        //Get DATA from cached packet
+        //FIXME TODO jlm
+        //This should be replaced by white/black/red chained lists
+        interest.SetNamedAttribute("CacheHit", 1.0, true);
+        interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+        std::string datavctr;
+
+        //FIXME TODO JLM create linked list of red/black/white lists and apply them
+        //RED LIST Copy #segments, byte range and size, etc
+        //For non headers, non segment packets (typical ICN)
+        bool data = newPacket.GetNamedAttribute("DATA", datavctr);
+        if (data)
+        {
+          interest.SetNamedAttribute("DATA", datavctr);
+        }
+        uint64_t value=0;
+        bool exists = newPacket.GetUnsignedNamedAttribute("Segments", value);
+        if (exists)
+        {
+          interest.SetUnsignedNamedAttribute("Segments", value);
+        }
+
+        //m_statsHit++;
+        if (m_stats)
+        {
+          m_stats->IncStats(m_statsHit);
+        }
+      } else {  //not in store
+        LOG("Cache Hit, but not found : Miss %s\n", interest.GetName().GetFullName().c_str());
+        interest.SetNamedAttribute("CacheHit", 0.0, true);
+        if (m_stats)
+          m_stats->IncStats(m_statsMissNotFound);
+      }
+    }
+  } else { //give interest packet HIGH value
+    LOG("Cache Miss %s\n", interest.GetName().GetFullName().c_str());
+    interest.SetNamedAttribute("CacheHit", 0.0, true);
+    if (m_stats)
+      m_stats->IncStats(m_statsMiss);
+  }
+}
+
 //Check if cache hit (store1 for ICN packets or FILE HDR packets)
 //TODO FIXME should be an asyncronous operation
 void CacheBasicManager::CacheHdrHit(PktType & interest) {
@@ -374,7 +444,7 @@ void CacheBasicManager::CacheHdrHit(PktType & interest) {
       //m_statsHitExpired++;
       if (m_stats)
         m_stats->IncStats(m_statsHitExpired);
-    } else { //drop, so its a miss
+    } else {
       LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
 
       //Get DATA from cached packet

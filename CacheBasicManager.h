@@ -65,6 +65,7 @@ public:
 
   virtual void GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist );
   virtual void CacheHdrHit(PktType &interest);
+  virtual void CacheIcnHit(PktType &interest);
   virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
 
   //delete Configs by name or number
@@ -106,6 +107,7 @@ private:
   std::string m_cacheStoreName;
 
   std::string m_statsMiss;
+  std::string m_statsMissNotFound;
   std::string m_statsHit;
   std::string m_statsHitExpired;
   std::string m_statsFileHit;
