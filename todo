@@ -1,7 +1,6 @@
 /* TODO
 1.   Create fake red/black/white list to remove/copy desired fields
-4.   Check if overfull, Delete works correctly.
-4b.  No header attribute, still work?
+4.   Check if overfull, Delete works correctly for ICN (file works).
 ------------
 6.   merge forwarding code ...
 7.   Fix LFU/LRU to use normalizer code ... verify it works when updating (e.g. delete, add)
