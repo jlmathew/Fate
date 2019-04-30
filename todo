@@ -14,6 +14,7 @@
 1.  passive caching via server distance from server/qos/lru/lfu/rnd/hash
 2.  increase recording of LRU vs constant LRU (e.g. 10 data items, but one has info on 10 items, other on 20).  Improvement?
 3.  Security: record requested (outstanding) requests vs anonymous data (cache poisoning). validate checksum.
+
 4.  On path caching improvments.  move towards server (need tx buffer)
 5.  off path (forwarded to cache), allow DHT and larger cache.   DHT and hash larger cache.
 6. punch-ticket 
