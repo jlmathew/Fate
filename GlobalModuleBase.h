@@ -46,33 +46,7 @@ SOFTWARE.
 
 class NodeManager;
 
-typedef struct timespec timer_struct_t;
-inline bool
-operator< (const timespec & lhs, const timespec & rhs)
-{
-  if (lhs.tv_sec == rhs.tv_sec)
-    {
-      return lhs.tv_nsec < rhs.tv_nsec;
-    }
-  return (lhs.tv_sec < rhs.tv_sec);
-};
-inline bool
-operator> (const timespec & lhs, const timespec & rhs)
-{ 
-  return !(lhs<rhs);
-}
-
-inline bool
-operator== (const timespec & lhs, const timespec & rhs)
-{ 
-  if (lhs.tv_sec == rhs.tv_sec)
-    {
-      return lhs.tv_nsec == rhs.tv_nsec;
-    }
-  return false;
-};
-
-
+typedef timespec timer_struct_t ;
 class GlobalModuleTimer
 {
 public:

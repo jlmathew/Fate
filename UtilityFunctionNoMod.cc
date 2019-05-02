@@ -75,7 +75,7 @@ UtilityLfu::DoDelete (const AcclContentName & name)
       if (exist) {
          m_scratchpad->EraseData(name); 
          if (m_normalize) {
-	    m_normalize->DeleteValue(retValue);
+	    m_normalize->DeleteValue(data);
 	 }
       }
 }
@@ -96,19 +96,19 @@ UtilityLfu::OnPktIngress (PktType & data)
 
   //bool valid = data.GetName(name).GetFullName();
   LfuData data64;
-  data64.m_weight=0;
+  data64=0;
   bool exist = m_scratchpad->ExistData (name, data64);
   if (m_createEntryMask & data.GetPacketPurpose ())
     {
       if (exist) {  //update entry
-        if (UINTMAX_MAX != data64.m_weight) {
-          data64.m_weight++;
+        if (UINTMAX_MAX != data64) {
+          data64++;
         }
         m_scratchpad->SetData (name, data64);
           exist = true;
 
         } else {  //first entry
-          data64.m_weight = 1;
+          data64 = 1;
           m_scratchpad->SetData (name, data64);
       m_normalize->InsertValue(data64);
         }
@@ -116,8 +116,8 @@ UtilityLfu::OnPktIngress (PktType & data)
     }
   else if (exist) //m_updateEntryMask() is true, and the data exists, e.g. Interest packet
     {
-      if (UINTMAX_MAX != data64.m_weight) {
-         data64.m_weight++;
+      if (UINTMAX_MAX != data64) {
+         data64++;
       }
       m_scratchpad->SetData (name, data64);
       m_normalize->InsertValue(data64);
@@ -292,7 +292,7 @@ UtilityLru::Config (ConfigWrapper & xmlConfig)
     {
       m_name = IdName ();
     }
-   ConfigWrapper *normConfig = config.GetFirstChildUtility("Normalize");
+   ConfigWrapper *normConfig = xmlConfig.GetFirstChildUtility("Normalize");
 	if (normConfig->valid()) {
 m_normalize = NormalizeGenerator<LruData>::CreateNewNormalizeEval(*normConfig);
        std::stringstream ss;
@@ -383,7 +383,7 @@ UtilityLru::Value (const AcclContentName & name) const
 			m_normalize->InsertValue(lruData);
 
 	     }
-	    double val =  m_normalize->EvaluateValue(existValue);
+	    double val =  m_normalize->EvaluateValue(existData);
 	     if (m_useNowAsTimeLimit) {
  m_normalize->DeleteValue(lruData);
  m_scratchpad->EraseData(fakeName);

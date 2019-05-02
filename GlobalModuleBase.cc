@@ -35,34 +35,6 @@ SOFTWARE.
 #include <stdint.h>
 #include <cstdarg>
 
-//need their own module
-//uint64_t GlobalModule::GetTimeAsInt() {}; 
-//double GlobalModule::GetTimeAsDbl() {}; 
-void
-GlobalModule::SetGlobalLog (const std::string & name, GlobalModuleLog * log)
-{
-  m_logs[name] = log;
-}
-
-GlobalModuleLog *
-GlobalModule::GetGlobalLog (const std::string & name) 
-{
-  return m_logs[name];          //Check for error!
-}
-
-GlobalModuleTimer *
-GlobalModule::GetGlobalTimer ()
-{
-  return m_timer;
-}
-
-
-void
-GlobalModule::SetGlobalTimer (GlobalModuleTimer * timer)
-{
-  m_timer = timer;
-}
-
 
 signed int
 GlobalModuleTimer::TimeCompare (timer_struct_t & a, timer_struct_t & b)
@@ -103,6 +75,35 @@ GlobalModuleTimer::Ratio (const timer_struct_t & nowTime, const timer_struct_t &
 
   return top / bottom;
 }
+
+//need their own module
+//uint64_t GlobalModule::GetTimeAsInt() {}; 
+//double GlobalModule::GetTimeAsDbl() {}; 
+void
+GlobalModule::SetGlobalLog (const std::string & name, GlobalModuleLog * log)
+{
+  m_logs[name] = log;
+}
+
+GlobalModuleLog *
+GlobalModule::GetGlobalLog (const std::string & name) 
+{
+  return m_logs[name];          //Check for error!
+}
+
+GlobalModuleTimer *
+GlobalModule::GetGlobalTimer ()
+{
+  return m_timer;
+}
+
+
+void
+GlobalModule::SetGlobalTimer (GlobalModuleTimer * timer)
+{
+  m_timer = timer;
+}
+
 
 //FIXME TODO, change to a more modern C++ << like ns3 uses.
 void

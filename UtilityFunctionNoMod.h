@@ -56,14 +56,84 @@ class LruData
 {                               //: public UtilitySpecificData {
 public:
   timer_struct_t m_objectTimestamp;
+  LruData() {}
+  LruData(const LruData &other) {
+	  m_objectTimestamp.tv_sec = other.m_objectTimestamp.tv_sec;
+	  m_objectTimestamp.tv_nsec = other.m_objectTimestamp.tv_nsec;
+  }
+  LruData(const timer_struct_t &other) {
+	  m_objectTimestamp.tv_sec = other.tv_sec;
+	  m_objectTimestamp.tv_nsec = other.tv_nsec;
+  }
+  LruData & operator=(const LruData &other) {
+     if (this != &other) {
+	  m_objectTimestamp.tv_sec = other.m_objectTimestamp.tv_sec;
+	  m_objectTimestamp.tv_nsec = other.m_objectTimestamp.tv_nsec;
+     }
+
+  }
+  LruData(long double val) {
+      uint64_t sec = (uint64_t) val;
+      uint64_t nsec = (val-sec) * 1000000000;
+      m_objectTimestamp.tv_sec = sec;
+      m_objectTimestamp.tv_nsec = nsec;
+  }
+operator long double() const
+  { 
+    long double ret = m_objectTimestamp.tv_sec + m_objectTimestamp.tv_nsec/1000000000.0; // magic happens here
+    return ret;
+  }
+  virtual ~LruData() {}
+  static signed int TimeCompare (const LruData & a, const LruData &b) {
+    if (a==b) {return 0;}	  // -1, a < b, 0 a== b, 1 a > b
+    if (a<b) {return -1;}
+    return 1;
+  }
+signed int TimeCompare(const LruData &rhs) {
+	return TimeCompare(*this, rhs);
+}
+
+LruData  operator- (const LruData &rhs) const
+{
+    LruData retVal;
+    retVal.m_objectTimestamp.tv_sec =m_objectTimestamp.tv_sec - rhs.m_objectTimestamp.tv_sec  ;
+    if (m_objectTimestamp.tv_nsec < rhs.m_objectTimestamp.tv_nsec)  {
+            retVal.m_objectTimestamp.tv_sec--;
+     retVal.m_objectTimestamp.tv_nsec =m_objectTimestamp.tv_nsec + 1000000000- rhs.m_objectTimestamp.tv_nsec  ;
+    } else {
+     retVal.m_objectTimestamp.tv_nsec =m_objectTimestamp.tv_nsec - rhs.m_objectTimestamp.tv_nsec  ;
+    }
+    return retVal;
+}
+  bool
+operator< (const LruData & rhs) const
+{
+  if (m_objectTimestamp.tv_sec == rhs.m_objectTimestamp.tv_sec)
+    {
+      return m_objectTimestamp.tv_nsec < rhs.m_objectTimestamp.tv_nsec;
+    }
+  return (m_objectTimestamp.tv_sec < rhs.m_objectTimestamp.tv_sec);
+}
+bool
+operator> (const LruData & rhs) const
+{ 
+  return !(*this>rhs);
+}
+
+bool
+operator== (const LruData & rhs) const
+{ 
+  if (m_objectTimestamp.tv_sec == rhs.m_objectTimestamp.tv_sec)
+    {
+      return m_objectTimestamp.tv_nsec == rhs.m_objectTimestamp.tv_nsec;
+    }
+  return false;
+}
 };
 
+typedef uint64_t LfuData;
 
-class LfuData
-{                               //: public UtilitySpecificData {
-public:
-  uint64_t m_weight;  //optional
-};
+
 
 
 
@@ -86,8 +156,8 @@ public:
   }
 
   //call Compute before Value, in case need to adjust values in relation to itself
-  virtual void Compute (const AcclContentName & name);
-  virtual void Compute ();
+  //virtual void Compute (const AcclContentName & name);
+  //virtual void Compute ();
 
   virtual bool OnInit (UtilityExternalModule *);
 
@@ -101,7 +171,7 @@ public:
 
 protected:
   class StorageClass < AcclContentName, LruData > *m_scratchpad;
-    class Normalize<uint64_t> *m_normalize;
+    class Normalize<LruData> *m_normalize;
     bool m_useNowAsTimeLimit; 
 
 };
@@ -125,8 +195,8 @@ public:
   }
 
   //call Compute before Value, in case need to adjust values in relation to itself
-  virtual void Compute (const AcclContentName & name);
-  virtual void Compute ();
+  //virtual void Compute (const AcclContentName & name);
+  //virtual void Compute ();
 
   virtual double Value (const AcclContentName & name) const;
 
@@ -138,7 +208,7 @@ public:
 
 protected:
   class StorageClass < AcclContentName, LfuData > *m_scratchpad;
-    class Normalize<uint64_t> *m_normalize;
+    class Normalize<LfuData> *m_normalize;
 };
 
 
