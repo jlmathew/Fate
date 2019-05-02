@@ -58,11 +58,6 @@ public:
   timer_struct_t m_objectTimestamp;
 };
 
-class LruDataSpatial : public LruData
-{                               //: public UtilitySpecificData {
-public:
-  uint64_t m_position;  //optional
-};
 
 class LfuData
 {                               //: public UtilitySpecificData {
@@ -70,54 +65,6 @@ public:
   uint64_t m_weight;  //optional
 };
 
-class LfuDataSpatial : public LfuData
-{                               //: public UtilitySpecificData {
-public:
-  uint64_t m_position;  //optional
-};
-
-
-
-class UtilityLruSp : public UtilityHandlerBase
-{
-public:
-  UtilityLruSp ();
-  UtilityLruSp (ConfigWrapper & xmlConfig);
-  ~UtilityLruSp ();
- //
-  //fixed increment returns an equal value, based upon how many are 
-  //lower/higher than itself.
-  //e.g. if 10 items are inserted, and 5 are below it, and 5 are
-  //higher, it will have a value of 0.5, regardless of timestamp.
-
-  virtual void Config (ConfigWrapper & xmlConfig);
-
-  virtual void OnPktIngress (PktType & data);   //Rx
-
-  static const dataNameType_t & IdName (void)
-  {
-    static const dataNameType_t idName ("LRU_Sp");
-      return idName;
-  }
-
-  //call Compute before Value, in case need to adjust values in relation to itself
-  virtual void Compute (const AcclContentName & name);
-  virtual void Compute ();
-  //virtual void Print(std::ostream & os, const AcclContentName & name, double &value)  const;
-  virtual bool OnInit (UtilityExternalModule *);
-
-  virtual double Value (const AcclContentName & name) const;
-
-  virtual uint64_t EstMemoryUsed (void) const;
-
-  virtual void DoDelete (const AcclContentName & name);
-
-  virtual bool SelfTest(void); 
-
-protected:
-  bool m_timeChange;
-  class StorageClass < AcclContentName, LruDataSpatial > *m_scratchpad;
-};
 
 
 class UtilityLru : public UtilityHandlerBase
@@ -126,12 +73,6 @@ public:
   UtilityLru ();
   UtilityLru (ConfigWrapper & xmlConfig);
   ~UtilityLru ();
-  //<Utility name="LRU"  instance="1" scaling="relative_age" | "fixed_increment" (default) />
-  //both 'scaling' sets the oldest value to zero, and the newest to '1'.
-  //but relative_age returns a value in ratio to that.  e.g. if the
-  //oldest is 10 and the youngest is 20 timestamp, a value of 12
-  //returns (12-10)/(20-10) = 0.2
-  //
 
   virtual void Config (ConfigWrapper & xmlConfig);
 
@@ -159,10 +100,10 @@ public:
   virtual bool SelfTest(void); 
 
 protected:
-  timer_struct_t m_oldestTime, m_newestTime;
-  bool m_useNowAsTimeLimit;
-  bool m_timeChange;
   class StorageClass < AcclContentName, LruData > *m_scratchpad;
+    class Normalize<uint64_t> *m_normalize;
+    bool m_useNowAsTimeLimit; 
+
 };
 
 class UtilityLfu:public UtilityHandlerBase
@@ -171,7 +112,6 @@ public:
   UtilityLfu ();
   UtilityLfu (ConfigWrapper & xmlConfig);
   ~UtilityLfu ();
-  //<Utility name="LFU"  instance="1" />
 
   virtual void Config (ConfigWrapper & xmlConfig);
 
@@ -198,45 +138,9 @@ public:
 
 protected:
   class StorageClass < AcclContentName, LfuData > *m_scratchpad;
-  bool m_spaceChange;
-  LfuData m_lfu, m_mfu; //least and most recent
+    class Normalize<uint64_t> *m_normalize;
 };
 
-class UtilityLfuSp:public UtilityHandlerBase
-{
-public:
-  UtilityLfuSp ();
-  UtilityLfuSp (ConfigWrapper & xmlConfig);
-  ~UtilityLfuSp ();
-  //<Utility name="LFU"  instance="1" />
-
-  virtual void Config (ConfigWrapper & xmlConfig);
-
-  virtual void OnPktIngress (PktType & data);   //Rx
-
-  static const dataNameType_t & IdName (void)
-  {
-    static const dataNameType_t idName ("LFU_Sp");
-      return idName;
-  }
-
-  //call Compute before Value, in case need to adjust values in relation to itself
-  virtual void Compute (const AcclContentName & name);
-  virtual void Compute ();
-  //virtual void Print(std::ostream & os, const AcclContentName & name, double &value)  const;
-
-  virtual double Value (const AcclContentName & name) const;
-
-  virtual uint64_t EstMemoryUsed (void) const;
-
-  virtual void DoDelete (const AcclContentName & name);
-
-  virtual bool SelfTest(void);
-
-protected:
-  class StorageClass < AcclContentName, LfuDataSpatial > *m_scratchpad;
-  bool m_spaceChange;
-};
 
 class UtilityNameAttrMatch:public UtilityHandlerBase
 {
@@ -394,21 +298,18 @@ private:
 
 };
 
-//add LFU
-
-//add fifo
-
 
 //Sensor based (new file)
 //add positional (gps) value (source, current, destination)
 //add power (battery) value
 //Congestion (forwarding), network speed, reliability (errorness), phy security properties (fiber, copper, air)
-class UtilityU32ValuationEval : public UtilityHandlerBase
+//this is for fields containing values, e.g. hops=5
+class UtilityU64ValuationEval : public UtilityHandlerBase
 {
 public:
-  UtilityU32ValuationEval();
-  UtilityU32ValuationEval(ConfigWrapper &config);
-  ~UtilityU32ValuationEval();
+  UtilityU64ValuationEval();
+  UtilityU64ValuationEval(ConfigWrapper &config);
+  ~UtilityU64ValuationEval();
   virtual void OnPktIngress (PktType & pkt);
 
   virtual void DoDelete (const AcclContentName & name);
@@ -427,7 +328,7 @@ public:
 
 private:
   class StorageClass < dataNameType_t, uint32_t >*m_scratchpad;
-  class Normalize<uint32_t> *m_normalize;
+  class Normalize<uint64_t> *m_normalize;
 
 };
 

@@ -139,17 +139,9 @@ UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
   {
     return new UtilityNameAttrMatch(config);
   }
-  else if (!name.compare(UtilityLruSp::IdName()))
+  else if (!name.compare(UtilityU64ValuationEval::IdName()))
   {
-    return new UtilityLruSp(config);
-  }
-  else if (!name.compare(UtilityLfuSp::IdName()))
-  {
-    return new UtilityLfuSp(config);
-  }
-  else if (!name.compare(UtilityU32ValuationEval::IdName()))
-  {
-    return new UtilityU32ValuationEval(config);
+    return new UtilityU64ValuationEval(config);
   }
 
   //no utilities found
