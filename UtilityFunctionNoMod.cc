@@ -336,7 +336,6 @@ UtilityLru::OnPktIngress (PktType & data)
   }
 
   timer_struct_t timeStamp = m_externalModule->GetGlobalModule ()->GetGlobalTimer ()->GetTime ();
-  uint64_t numEntries = m_scratchpad->size ();
 
 
   LruData lruData, lruData2;

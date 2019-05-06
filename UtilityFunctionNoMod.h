@@ -70,7 +70,7 @@ public:
       m_objectTimestamp.tv_sec = other.m_objectTimestamp.tv_sec;
       m_objectTimestamp.tv_nsec = other.m_objectTimestamp.tv_nsec;
     }
-
+    return *this;
   }
   LruData(long double val) {
     uint64_t sec = (uint64_t) val;
