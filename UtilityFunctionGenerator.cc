@@ -143,6 +143,11 @@ UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
   {
     return new UtilityU64ValuationEval(config);
   }
+  else if (!name.compare(UtilityProtLastElement::IdName()))
+  {
+    return new UtilityProtLastElement(config);
+  }
+
 
   //no utilities found
   dataNameType_t errorStr = "Invalid Utility:";

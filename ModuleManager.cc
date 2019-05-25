@@ -448,9 +448,9 @@ ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< doubl
 }
 
 void
-ModuleManager::LogStats ()
+ModuleManager::LogStats (std::ostream & os)
 {
-   //send to correct log an action (time, event[insert,update,delete,compute], name, value)
+	m_stats->DumpStats(os);
 }                               //do nothing, default
 
 void

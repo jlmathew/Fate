@@ -406,4 +406,34 @@ private:
 
 };
 
+//protect for last inserted elements
+class UtilityProtLastElement:public UtilityHandlerBase
+{
+public:
+  UtilityProtLastElement (ConfigWrapper & xmlConfig);
+  ~UtilityProtLastElement ();
+
+
+  virtual void Config (ConfigWrapper & xmlConfig);
+
+  virtual void OnPktIngress (PktType & data);   //Rx
+
+
+  static const dataNameType_t IdName ()
+  {
+    static const dataNameType_t idName ("PLE");
+    return idName;
+  };
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void);
+
+  virtual void DoDelete (const AcclContentName & name);
+
+private:
+   dataNameType_t m_lastElementSeen;
+   bool m_lastElemValid;
+};
+
 #endif

@@ -1018,3 +1018,55 @@ uint64_t UtilityU64ValuationEval::EstMemoryUsed (void) const {
   return 0;
 }
 
+
+
+
+UtilityProtLastElement::UtilityProtLastElement (ConfigWrapper & config):
+  m_lastElemValid (false)
+{
+  Config (config);
+}
+
+UtilityProtLastElement::~UtilityProtLastElement ()
+{
+}
+
+void
+UtilityProtLastElement::Config (ConfigWrapper & config)
+{
+  UtilityHandlerBase::Config(config);
+  if (!m_useAlias)
+  {
+    m_name = IdName ();
+  }
+}
+
+void
+UtilityProtLastElement::DoDelete (const AcclContentName & name)
+{
+   if (name == m_lastElementSeen)
+	   m_lastElemValid=false;
+}
+
+void
+UtilityProtLastElement::OnPktIngress (PktType & data)
+{
+	m_lastElementSeen= data.GetAcclName();
+	m_lastElemValid = true;
+}
+
+double
+UtilityProtLastElement::Value (const AcclContentName & name) const
+{
+   if (m_lastElemValid && name==m_lastElementSeen)
+	   return 1.0;
+   else
+	   return 0.0;
+}
+
+uint64_t
+UtilityProtLastElement::EstMemoryUsed (void)
+{
+  return m_lastElementSeen.size();                    
+}
+
