@@ -75,10 +75,10 @@ CacheBasicManager::OnInit(UtilityExternalModule * module) {
   }
   m_myNodeName = (module->GetDevice()->GetSelfNode())->Name();
   //should make this an easy subroutine
-  m_statsMiss = createHeirarchicalStatName("CacheMiss");
-  m_statsMissNotFound = createHeirarchicalStatName("CacheMissNotFound");
-  m_statsHit = createHeirarchicalStatName("CacheHit");
-  m_statsHitExpired = createHeirarchicalStatName("CacheHitExpired");
+  m_statsMiss = createHeirarchicalStatName("TotalCacheMiss");
+  m_statsMissNotFound = createHeirarchicalStatName("TotalCacheMissNotFound");
+  m_statsHit = createHeirarchicalStatName("TotalCacheHit");
+  m_statsHitExpired = createHeirarchicalStatName("TotalCacheHitExpired");
   m_stats->SetStats(m_statsMiss, (uint64_t) 0);
   m_stats->SetStats(m_statsMissNotFound, (uint64_t) 0);
   m_stats->SetStats(m_statsHit, (uint64_t) 0);
@@ -193,9 +193,10 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
   bool header = interest.GetUnsignedNamedAttribute("Header", tmp);
   AcclContentName name = interest.GetAcclName();
   //new data, may need to purge
-  ModuleManager::OnPktIngress(interest); //let utilities judge it
+  //ModuleManager::OnPktIngress(interest); //let utilities judge it
   if (interest.GetPacketPurpose() & PktType::DATAPKT) {
     if (header || (!header && !nonheader)) {
+      ModuleManager::OnPktIngress(interest); //let utilities judge it
       CacheHdrHit(interest);
       //Create file entries, header has info
       uint64_t totalsize=0;
@@ -203,7 +204,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
       if (sizeexist)
         m_fileStore.SetFileSize(interest.GetAcclName(), totalsize);
 
-      std::list < std::pair < double, AcclContentName> > PktList;
+      //std::list < std::pair < double, AcclContentName> > PktList;
       //FIXME TODO need to loop until size in range
       if (header || nonheader) {
         PurgeBytesContent(interest);
@@ -212,7 +213,7 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
         PurgeICNContent(interest);
       }
 
-    } else if (nonheader) {
+    } else if (nonheader) { //request for file range
       std::string strData;
       bool valid = interest.GetNamedAttribute("DATA", strData);
       if (!valid)
@@ -233,9 +234,11 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
   }        //interest matching
   else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
     if (header || (!header && !nonheader)) {
+      ModuleManager::OnPktIngress(interest); //let utilities judge it
       CacheHdrHit(interest);
 
     } else if (nonheader) {
+      //ModuleManager::OnPktIngress(interest); //let utilities judge it
       std::vector<uint8_t> data;
       data.resize(byteEnd-byteStart+1);
       bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
@@ -245,6 +248,22 @@ CacheBasicManager::IcnFileAction(PktType & interest) {
         interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
         std::string strData(data.begin(),data.end());
         interest.SetNamedAttribute("DATA", strData);
+
+	          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/HitSegment");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+		  m_namesPerOrigin.insert(pathMissName);
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+	  } 
+	  m_stats->IncStats(pathMissName);
+      } else {
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/MissSegment");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
       }
     }
   }
@@ -271,7 +290,10 @@ void CacheBasicManager::PurgeICNContent(PktType &pkt)
   if (!m_useStore) {
     return;
   }
+  //dont purge if already in cache
+  if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
 
+  //FIXME TODO remove m_protectInsert, we have it as a utility.
   if ((m_PktNames.size()+(int) m_protectInsert)  > m_storageLimit) {
     std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
     //Compute();
@@ -300,6 +322,10 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
   if (!m_useStore) {
     return;
   }
+  //dont purge if already in cache
+  if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
+
+
   uint64_t totalSize=0;
   pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
   if ( (m_fileStore.GetTotalBytesUsed()-(m_protectInsert)*totalSize) > (m_storageLimit)) {
@@ -408,19 +434,47 @@ void CacheBasicManager::CacheIcnHit(PktType & interest) {
         if (m_stats)
         {
           m_stats->IncStats(m_statsHit);
+	  //stats by origin
+          std::string pathHitName =  createHeirarchicalStatName(interest.GetName().GetPath()+"/Hits");
+	  auto it=m_namesPerOrigin.find(pathHitName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathHitName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathHitName);
+	  } 
+	  m_stats->IncStats(pathHitName);
         }
       } else {  //not in store
         LOG("Cache Hit, but not found : Miss %s\n", interest.GetName().GetFullName().c_str());
         interest.SetNamedAttribute("CacheHit", 0.0, true);
-        if (m_stats)
+        if (m_stats) {
           m_stats->IncStats(m_statsMissNotFound);
+	  	  //stats by origin
+          std::string pathHitMissName =  createHeirarchicalStatName(interest.GetName().GetPath()+"/HitMissNotFound");
+	  auto it=m_namesPerOrigin.find(pathHitMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathHitMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathHitMissName);
+	  } 
+	  m_stats->IncStats(pathHitMissName);
+
+	}
       }
     }
   } else { //give interest packet HIGH value
     LOG("Cache Miss %s\n", interest.GetName().GetFullName().c_str());
     interest.SetNamedAttribute("CacheHit", 0.0, true);
-    if (m_stats)
+    if (m_stats) {
       m_stats->IncStats(m_statsMiss);
+      	  //stats by origin
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Miss");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
+
+    }
   }
 }
 
@@ -437,13 +491,28 @@ void CacheBasicManager::CacheHdrHit(PktType & interest) {
     //std::cout << "\nInterest Update:" << interest.GetAcclName ();
     Compute(interest.GetAcclName());
     double value = Value(interest.GetAcclName());
-
+//non multiple packets fail with a value of 0, for some reason JLM FIXME TODO
+std::cout << interest.GetAcclName() << " has value of " << value << "\n";
+if (value ==0) {
+    auto name=interest.GetAcclName();
+    value = Value(name);
+}
     if (value <= m_dropValue) {
       LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());
       interest.SetNamedAttribute("CacheHit", 0.0, true);
       //m_statsHitExpired++;
-      if (m_stats)
+      if (m_stats) {
         m_stats->IncStats(m_statsHitExpired);
+    	  //stats by origin
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/HitExpired");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
+	
+      }
     } else {
       LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
 
@@ -490,15 +559,34 @@ void CacheBasicManager::CacheHdrHit(PktType & interest) {
       }
 
       //m_statsHit++;
-      if (m_stats)
+      if (m_stats) {
         m_stats->IncStats(m_statsHit);
+		  //stats by origin
+          std::string pathHitName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Hits");
+	  auto it=m_namesPerOrigin.find(pathHitName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathHitName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathHitName);
+	  } 
+	  m_stats->IncStats(pathHitName);
+
+      }
     }
   } else { //give interest packet HIGH value
     LOG("Cache Miss %s\n", interest.GetName().GetFullName().c_str());
     interest.SetNamedAttribute("CacheHit", 0.0, true);
-    if (m_stats)
+    if (m_stats) {
       m_stats->IncStats(m_statsMiss);
-  }
+    	  //stats by origin
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Miss");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
+      }
+    }
 }
 
 void

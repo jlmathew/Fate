@@ -54,8 +54,9 @@ public:
     virtual void SetStats(const std::string &name, double newStat)=0;
     virtual void SetStats(const std::string &name, uint64_t newStat)=0;
     virtual void DumpStats(std::ostream &os, const std::string &delim=" = ",const std::string &eol="\n") const = 0;
-};
+    virtual void PrintStats() { DumpStats(std::cout); }
 
+};
 union statType_t {
     double dStat;
     uint64_t uStat;

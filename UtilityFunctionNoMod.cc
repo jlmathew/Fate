@@ -111,9 +111,9 @@ UtilityLfu::OnPktIngress (PktType & data)
       if (UINTMAX_MAX != data64) {
         m_normalize->DeleteValue(data64);
         data64++;
-      }
       m_scratchpad->SetData (name, data64);
       m_normalize->InsertValue(data64);
+      }
 
     } else {  //first entry
       data64 = 1;
@@ -127,9 +127,9 @@ UtilityLfu::OnPktIngress (PktType & data)
     if (UINTMAX_MAX != data64) {
       m_normalize->DeleteValue(data64);
       data64++;
-    }
     m_scratchpad->SetData (name, data64);
     m_normalize->InsertValue(data64);
+    }
   }
 
 }

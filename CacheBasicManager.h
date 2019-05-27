@@ -112,6 +112,7 @@ private:
   std::string m_statsHitExpired;
   std::string m_statsFileHit;
   std::string m_statsFileMiss;
+  std::set<std::string> m_namesPerOrigin;
   double m_dropValue;
   std::string m_moduleName; //hierarchical name: nodeName/moduleName
   bool m_useStore;
