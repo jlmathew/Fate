@@ -256,12 +256,16 @@ UtilityLfu::Value (const AcclContentName & name) const
 {
   LfuData retValue;
   bool exist = m_scratchpad->ExistData (name, retValue);
+  double retVal=-1;
   if (exist) {
-    return  m_normalize->EvaluateValue(retValue);
+    retVal=  m_normalize->EvaluateValue(retValue);
   } else { //data not found!
-    return m_defaultValue;
+    retVal = m_defaultValue;
   }
 
+std::cout << name << " lfu value of [" << retValue << "] is " << retVal << "\n";
+
+  return retVal;
 }
 
 
@@ -386,6 +390,7 @@ double
 UtilityLru::Value (const AcclContentName & name) const
 {
   LruData lruData, existData;
+  double retVal = -1.0;
   bool exist = m_scratchpad->ExistData (name, existData);
   if (exist) {
     const std::string fakeName="InvalidAndDontCareTempName";
@@ -402,12 +407,14 @@ UtilityLru::Value (const AcclContentName & name) const
       m_scratchpad->EraseData(fakeName);
 
     }
-    return val;
+    retVal = val;
   } else { //data not found!
-    return m_defaultValue;
+    retVal = m_defaultValue;
   }
 
+ std::cout << name << " lru value[" << existData << "] is " << retVal << "\n";
 
+  return retVal;
 }
 
 

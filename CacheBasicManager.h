@@ -79,7 +79,8 @@ public:
   //store connectivity
 
   void SetStore (StoreManager *);
-
+  void DumpStore (std::ostream &os);
+  void PrintStore ();
   void OnPktIngress (PktType & interest);       //Rx
   void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
 

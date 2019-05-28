@@ -322,6 +322,7 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
   if (!m_useStore) {
     return;
   }
+
   //dont purge if already in cache
   if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
 
@@ -491,14 +492,13 @@ void CacheBasicManager::CacheHdrHit(PktType & interest) {
     //std::cout << "\nInterest Update:" << interest.GetAcclName ();
     Compute(interest.GetAcclName());
     double value = Value(interest.GetAcclName());
+
 //non multiple packets fail with a value of 0, for some reason JLM FIXME TODO
 std::cout << interest.GetAcclName() << " has value of " << value << "\n";
-if (value ==0) {
-    auto name=interest.GetAcclName();
-    value = Value(name);
-}
+
     if (value <= m_dropValue) {
       LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());
+PrintStore();
       interest.SetNamedAttribute("CacheHit", 0.0, true);
       //m_statsHitExpired++;
       if (m_stats) {
@@ -601,6 +601,13 @@ CacheBasicManager::OnPktEgress(PktType & data, const PktTxStatus & status) {
 void
 CacheBasicManager::StoreActionsDone(const std::list < StoreEvents > &list) {
 }
+
+  void CacheBasicManager::DumpStore (std::ostream &os) {
+     for(auto it =m_PktNames.begin(); it != m_PktNames.end(); it++) {
+         Value(*it);
+     }
+  }
+  void CacheBasicManager::PrintStore () { DumpStore(std::cout); }
 
 //StoreActionsDone JLM FIXME
 
