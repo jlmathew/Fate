@@ -1,0 +1,16 @@
+<NodeModule>
+  <UtilityModule moduleName="SecurityBasicManager" order="1" >
+    <Utility name="UTILITYBLOCK" proxyName="SecurityBlock" order="1">
+        <Utility name="COUNT" missing_count_value="10" matching_lower_bound="0" matching_upper_bound="1" count_condition="decrement" match_criteria="LeftRightInclusive" attribName="TtlHop" />
+    </Utility>
+  </UtilityModule>
+  <UtilityModule moduleName="SecurityBasicManager" name="postprocess" order="12" >
+    <Utility name="UTILITYBLOCK" >
+	    <Utility name="NormalizedEval" "decrement" match_criteria="LeftRightInclusive" attribName="oneOverN" >
+		    <Normalize name="GeometericMatch"  invertValue="true"   />
+        </Utility>
+    </Utility>
+  </UtilityModule>
+  
+</NodeModule>
+

@@ -207,18 +207,22 @@ public:
     m_bias = config.GetAttributeBool ("biasLowVal", m_bias);
   }
   void Print(std::ostream &os) const {
-    os << "_Ngr:" << m_invert << "_";
+    os << "_Ngi" << m_invert << "b" << m_bias;
   }
 
   double EvaluateValue(T val)
   {
     double ret = 1.0;
-    T min = 1.0;
     if (this->m_values.empty())
       return 0.0;
-    min = *(this->m_values).cbegin(); //need something better?
-    if (val != 0.0) {
-      ret = 1.0/(val-min+1.0);
+    
+    if (m_bias) {
+        T min = *(this->m_values).cbegin(); //need something better?
+        ret = 1.0/(val-min+1.0);
+    } else {
+      if (val != 0.0) {
+	ret = 1.0/val;
+      } else { ret = 1.0; }
     }
     if (m_invert) {
       ret = 1.0-ret;
@@ -246,18 +250,19 @@ public:
     inValid,
     floor,
     ceiling,
-    fullRange,
-    invfloor,
-    invceiling,
-    invfullRange
+    fullRange
   };
-  NormalRanked(): m_strVal("ceiling"), m_valOption(ceiling) {}
-  NormalRanked(ConfigWrapper &config):m_strVal("ceiling"), m_valOption(ceiling)  {
+  NormalRanked(): m_strVal("ceiling"), m_valOption(ceiling), m_invert(false) {}
+  NormalRanked(ConfigWrapper &config):m_strVal("ceiling"), m_valOption(ceiling),m_invert(false)  {
     Config(config);
   }
   virtual ~NormalRanked() { }
   void Config(ConfigWrapper &config) {
     NormalizeValue<T>::Config(config);
+
+    
+    m_invert = config.GetAttributeBool ("invertValue", m_invert);
+
     m_strVal = config.GetAttribute("value_type", m_strVal);
 
     if (m_strVal == "ceiling") {
@@ -268,20 +273,11 @@ public:
     }
     else if (m_strVal == "fullRange") {
       m_valOption = fullRange;
-    }
-    else if (m_strVal == "invceiling") {
-      m_valOption = invceiling;
-    }
-    else if (m_strVal == "invfloor") {
-      m_valOption = invfloor;
-    }
-    else if (m_strVal == "invfullRange") {
-      m_valOption = invfullRange;
-    }
+    } else { throw("Unknown rnage type"); }
 
   }
   void Print(std::ostream &os) const {
-    os << "_Nr:" << m_valOption << "_";
+    os << "_Nr" << m_invert << "o" << m_valOption;
   }
   double EvaluateValue(T val)
   {
@@ -304,17 +300,12 @@ public:
     case fullRange:  // can NOT be 0.0
       typeval = (double) (val)/(max);
       break;
-    case invfloor:
-      typeval = 1.0 - (double) (static_cast<double>(val-min))/(max-min);
-      break;
-    case invceiling:
-      typeval = 1.0 - (double) (static_cast<double>(val-min)+1.0)/(max-min+1.0);
-      break;
-    case invfullRange:
-      typeval = 1.0 - (double) (val)/(max);
-      break;
+      //FIXME TODO inverse should be separate property
     default:
       throw ("Unknown value option type");
+    }
+    if (m_invert) {
+      typeval = 1.0-typeval;
     }
     return typeval;
   }
@@ -328,6 +319,7 @@ public:
 private:
   std::string m_strVal;
   normalRankedValueOption_t m_valOption;
+  bool m_invert;
 };
 
 
@@ -354,7 +346,7 @@ public:
     return idName;
   }
   void Print(std::ostream &os) const {
-    os << "_Nsr_";
+    os << "_Nsi" << m_invert << "r" << m_rankHigh ;
   }
 
   double EvaluateValue(T val)

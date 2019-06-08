@@ -1,0 +1,21 @@
+<NodeModule>
+  <UtilityModule moduleName="SecurityBasicManager" name="postprocess" order="12" >
+  <Utility name="UTILITYBLOCK" >
+       <Utility name="MAX">
+
+	    <Utility name="NormalizedEval"  attribName="normalmatch" >
+		    <Normalize normalizeName="NormalMatch" matchLow="9.0"  matchHigh="9.0"   />
+	    </Utility>
+
+	    <Utility name="MULT">
+        	    <Utility name="CONST" defaultValue="0.67"/>
+	     <Utility name="NormalizedEval"  attribName="normalmatch" >
+		    <Normalize normalizeName="NormalMatch" matchLow="31.0"  matchHigh="32.0"   />
+            </Utility>
+          </Utility>
+        </Utility>
+    </Utility>
+  </UtilityModule>
+  
+</NodeModule>
+
