@@ -162,7 +162,7 @@ public:
     InsertMatchValue(confMatch);
   }
   void Print(std::ostream &os) const {
-    os << "_Nm_";
+    os << "_Nm" << m_data ;
   }
 
   void
@@ -277,7 +277,7 @@ public:
 
   }
   void Print(std::ostream &os) const {
-    os << "_Nr" << m_invert << "o" << m_valOption;
+    os << "_Nri" << m_invert << "o" << m_valOption;
   }
   double EvaluateValue(T val)
   {

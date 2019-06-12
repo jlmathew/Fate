@@ -435,5 +435,35 @@ private:
    dataNameType_t m_lastElementSeen;
    bool m_lastElemValid;
 };
+class UtilityRegexMatch:public UtilityHandlerBase
+{
+public:
+  UtilityRegexMatch ();
+  UtilityRegexMatch (ConfigWrapper & xmlConfig);
+  ~UtilityRegexMatch ();
+  virtual void Config (ConfigWrapper & xmlConfig);
+
+  static const dataNameType_t &
+  IdName ()
+  {
+    static const dataNameType_t idName ("REGEX_MATCH");
+    return idName;
+  }
+  virtual void OnPktIngress (PktType & data);   //Rx
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void);
+
+  virtual bool SelfTest(void);
+private:
+  //FIXME TODO should have a matching range
+  std::string m_matchingField;
+  std::string m_regPattern;
+  std::string m_regMatch;
+  std::string m_matchType;
+  class StorageClass < AcclContentName, bool > *m_scratchpad;
+  std::string m_optionMatch;
+};
 
 #endif

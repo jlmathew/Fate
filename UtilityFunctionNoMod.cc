@@ -1077,3 +1077,97 @@ UtilityProtLastElement::EstMemoryUsed (void)
   return m_lastElementSeen.size();                    
 }
 
+
+//match name
+//Change match value to regex match value
+UtilityRegexMatch::UtilityRegexMatch ()
+{
+}
+UtilityRegexMatch::UtilityRegexMatch(ConfigWrapper & config)
+//: UtilityHandlerBase (config)
+{
+  Config (config);
+}
+
+UtilityRegexMatch::~UtilityRegexMatch()
+{
+  delete m_scratchpad;
+}
+
+void
+UtilityRegexMatch::Config (ConfigWrapper & xmlConfig)
+{
+
+  UtilityHandlerBase::Config(xmlConfig);
+  if (!m_useAlias)
+  {
+    m_name = IdName ();
+  }
+assert(0); //not ready yet
+  m_matchingField = xmlConfig.GetAttribute ("matchField", m_matchingField);
+  m_regPattern = xmlConfig.GetAttribute ("regexPattern", m_regPattern);
+  m_regMatch = xmlConfig.GetAttribute ("regexValue", m_regMatch);
+
+  m_name.append ("_");
+  if (m_matchType == "name")
+  {
+    m_name.append ("N:");
+  }
+  else if (m_matchType == "option")
+  {
+    m_name.append ("O(");
+    m_name.append (m_optionMatch);
+    m_name.append(")");
+  }
+  else {
+    assert(0);
+  }
+
+  //m_nameOption = "%";
+  /*std::ostringstream out;
+  out << m_modValue;
+  out << "%(";
+  out << m_modMatchLow;
+  out << ",";
+  out << m_modMatchHigh;
+  out << ")";*/
+  //m_name.append (out.str ());
+  m_scratchpad = new StorageClass < AcclContentName, bool >;
+  m_scratchpad->setStorageType (m_storageMethod);
+
+}
+
+void
+UtilityRegexMatch::OnPktIngress (PktType & data)
+{
+ 
+}
+
+double
+UtilityRegexMatch::Value (const AcclContentName & name) const
+{
+  if (m_scratchpad->empty ())
+  {
+    return m_defaultValue;
+  }
+  bool tmp = false;
+  bool found = m_scratchpad->ExistData (name, tmp);  //could be a 'set' structure
+  if (!found)
+    return m_defaultValue;
+  else
+    return tmp ? 1.0 : 0.0;
+
+}
+
+uint64_t UtilityRegexMatch::EstMemoryUsed ()
+{
+  return 0.0;
+}
+
+bool
+UtilityRegexMatch::SelfTest()
+{
+return true;
+}
+
+
