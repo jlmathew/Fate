@@ -50,7 +50,7 @@ SOFTWARE.
 #include "BaseStorage.h"
 #include "PacketTypeBase.h"
 #include "NormalizeValue.h"
-
+#include <regex>
 //LRU specific data
 class LruData
 { //: public UtilitySpecificData {
@@ -459,9 +459,24 @@ public:
 private:
   //FIXME TODO should have a matching range
   std::string m_matchingField;
+  enum matchingType_t {
+     illegal=0,
+     baseName,
+     specifierName,
+     fullName,
+     fieldNameTemp,
+     filedNamePerm,
+     allFieldsTemp,
+     allFieldsPerm,
+     allFields,
+
+  };
+
   std::string m_regPattern;
+  matchingType_t m_matchTypeEnum;
   std::string m_regMatch;
   std::string m_matchType;
+  std::regex m_regexPat;
   class StorageClass < AcclContentName, bool > *m_scratchpad;
   std::string m_optionMatch;
 };

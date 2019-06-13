@@ -33,7 +33,6 @@ SOFTWARE.
 #include "RangeData.h"
 #include "UtilityFunctionGenerator.h"
 
-
 //LFU
 UtilityLfu::UtilityLfu ()
   :  m_normalize(nullptr)
@@ -1105,7 +1104,9 @@ UtilityRegexMatch::Config (ConfigWrapper & xmlConfig)
   }
 assert(0); //not ready yet
   m_matchingField = xmlConfig.GetAttribute ("matchField", m_matchingField);
+
   m_regPattern = xmlConfig.GetAttribute ("regexPattern", m_regPattern);
+  //m_regexPat(m_regPattern);
   m_regMatch = xmlConfig.GetAttribute ("regexValue", m_regMatch);
 
   m_name.append ("_");
