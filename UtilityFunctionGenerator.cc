@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include "ForwardBasicManager.h"
 #include "SecurityBasicManager.h"
+#include "SecurityPoisonCacheManager.h"
 #include "CacheBasicManager.h"
 #include "CacheBasicManager2.h"
 
@@ -173,6 +174,10 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
     return new CacheBasicManager2 (config);
   }
   else if (!name.compare (SecurityBasicManager::IdName ()))
+  {
+    return new SecurityBasicManager (config);
+  }
+  else if (!name.compare (SecurityPoisonCacheManager::IdName ()))
   {
     return new SecurityBasicManager (config);
   }
