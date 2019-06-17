@@ -1027,6 +1027,66 @@ uint64_t UtilityU64ValuationEval::EstMemoryUsed (void) const {
 
 
 
+//evaluate based upon attribute value
+UtilityNormValuationEval::UtilityNormValuationEval()
+   {}
+UtilityNormValuationEval::UtilityNormValuationEval(ConfigWrapper &config)
+  {
+  Config(config);
+}
+UtilityNormValuationEval::~UtilityNormValuationEval() {
+  if (m_scratchpad)
+    delete m_scratchpad;
+}
+
+void UtilityNormValuationEval::OnPktIngress (PktType &data) {
+  double value=0.0;
+  AcclContentName name = data.GetAcclName ();
+  bool attribExists = data.GetNamedAttribute (m_defaultAttribute, value, true);
+
+  if (attribExists) {
+    m_scratchpad->SetData(name, value);
+  }
+}
+
+void UtilityNormValuationEval::DoDelete (const AcclContentName & name) {
+  double retValue;
+  bool exist = m_scratchpad->ExistData (name, retValue);
+  if (exist) {
+    m_scratchpad->EraseData(name);
+  }
+}
+
+void UtilityNormValuationEval::Config (ConfigWrapper & config) {
+  UtilityHandlerBase::Config(config);
+  if (!m_useAlias)
+  {
+    m_name = IdName ();
+  }
+  //set other values
+  m_scratchpad = new StorageClass < dataNameType_t, double >;
+
+  m_scratchpad->setStorageType (m_storageMethod);
+
+}
+double  UtilityNormValuationEval::Value (const AcclContentName & name) const {
+  double retValue=0.0;
+  bool exist = m_scratchpad->ExistData (name, retValue);
+  if (exist) {
+    return retValue;
+  } else { //data not found!
+    return m_defaultValue;
+  }
+
+}
+
+uint64_t UtilityNormValuationEval::EstMemoryUsed (void) const {
+  return 0;
+}
+
+
+
+
 UtilityProtLastElement::UtilityProtLastElement (ConfigWrapper & config):
   m_lastElemValid (false)
 {

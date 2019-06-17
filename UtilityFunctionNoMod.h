@@ -373,6 +373,34 @@ private:
 };
 
 
+//Used for already evaluated parameters
+class UtilityNormValuationEval : public UtilityHandlerBase
+{
+public:
+  UtilityNormValuationEval();
+  UtilityNormValuationEval(ConfigWrapper &config);
+  ~UtilityNormValuationEval();
+  virtual void OnPktIngress (PktType & pkt);
+
+  virtual void DoDelete (const AcclContentName & name);
+
+  virtual void Config (ConfigWrapper & config);
+
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("NormEval");
+    return idName;
+  }
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void) const;
+
+private:
+  class StorageClass < dataNameType_t, double >*m_scratchpad;
+
+};
+
 //Sensor based (new file)
 //add positional (gps) value (source, current, destination)
 //add power (battery) value

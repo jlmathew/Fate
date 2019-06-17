@@ -45,6 +45,7 @@ SecurityCachePoisonManager::SecurityCachePoisonManager (ConfigWrapper & config)
 
 SecurityCachePoisonManager::~SecurityCachePoisonManager ()
 {
+	   m_seenInterestsBefore.clear();
 }
 
 
@@ -137,19 +138,28 @@ SecurityCachePoisonManager::OnDataPktIngress (PktType & interest)
 {
   ModuleManager::OnPktIngress (interest);       //let utilities judge it
 
+
 }
 void
 SecurityCachePoisonManager::OnInterestPktIngress (PktType & interest)
 {
   ModuleManager::OnPktIngress (interest);       //let utilities judge it
-
+  m_seenInterestsBefore.insert(interest.GetAcclName()); //for now we dont worry about cleaning up the size, assume millions
 }
 
 void
 SecurityCachePoisonManager::OnPktEgress (PktType & data, const PktTxStatus & status)
 {
-
+  
   ModuleManager::OnPktEgress (data, status);    //let utilities judge it
+  //modify utility to say 'not seen' or 'seen'
+  auto it = m_seenInterestsBefore.find(data.GetAcclName());
+  //use hardcoded names, for now FIXME TODO (should be read from xml)
+  if (it == m_seenInterestsBefore.end()) { //no seen
+	 data.SetNamedAttribute("SecurityEval", 0.3, true);
+  } else {
+	 data.SetNamedAttribute("SecurityEval", 1.0, true);
+  }
 }
 
 

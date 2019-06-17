@@ -144,6 +144,10 @@ UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
   {
     return new UtilityU64ValuationEval(config);
   }
+  else if (!name.compare(UtilityNormValuationEval::IdName()))
+  {
+    return new UtilityNormValuationEval(config);
+  }
   else if (!name.compare(UtilityProtLastElement::IdName()))
   {
     return new UtilityProtLastElement(config);
