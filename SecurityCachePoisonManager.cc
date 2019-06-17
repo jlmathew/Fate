@@ -88,7 +88,6 @@ void
 SecurityCachePoisonManager::OnPktIngress (PktType & pkt)
 {
   
-        OnDataInterestPktIngress (pkt);
 //std::cout << "security:" << pkt << "\n";
         //count incoming packet types
 //JLM FIXME TODO below should go in moduleManager
@@ -97,9 +96,11 @@ SecurityCachePoisonManager::OnPktIngress (PktType & pkt)
     {
       case PktType::DATAPKT:
           m_stats->IncStats(m_statsNumDataPkt);
+	  OnDataPktIngress(pkt);
         break;
       case PktType::INTERESTPKT:
           m_stats->IncStats(m_statsNumIntPkt);
+	  OnInterestPktIngress(pkt); 
         break;
      case PktType::INTERESTRESPONSEPKT:
           m_stats->IncStats(m_statsNumIntRespPkt);
@@ -132,12 +133,17 @@ SecurityCachePoisonManager::OnControlPktIngress (PktType & control)
 
 
 void
-SecurityCachePoisonManager::OnDataInterestPktIngress (PktType & interest)
+SecurityCachePoisonManager::OnDataPktIngress (PktType & interest)
 {
   ModuleManager::OnPktIngress (interest);       //let utilities judge it
 
 }
+void
+SecurityCachePoisonManager::OnInterestPktIngress (PktType & interest)
+{
+  ModuleManager::OnPktIngress (interest);       //let utilities judge it
 
+}
 
 void
 SecurityCachePoisonManager::OnPktEgress (PktType & data, const PktTxStatus & status)

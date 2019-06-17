@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #include "ModuleManager.h"
-
+#include <set>
 
 class SecurityCachePoisonManager:public ModuleManager
 {
@@ -63,7 +63,8 @@ public:
   //default actions
 private:
   //default actions
-  void OnDataInterestPktIngress (PktType & interest);
+  void OnDataPktIngress (PktType & interest);
+  void OnInterestPktIngress (PktType & interest);
   void OnControlPktIngress (PktType & control);
   void OnDebugPktIngress (PktType & debug);
   std::string m_statsNumDataPkt; 
@@ -72,5 +73,6 @@ private:
   std::string m_statsNumCtrlPkt; 
   std::string m_statsNumDebugPkt; 
   double m_dropValue;
-
+  //record seen interests
+  std::set< std::string> m_seenInterestsBefore; 
 };

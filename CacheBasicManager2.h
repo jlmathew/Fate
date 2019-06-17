@@ -28,8 +28,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef CACHEBASICMANAGER2_H_
-#define CACHEBASICMANAGER2_H_
+#ifndef CACHEBASICManager2_H_
+#define CACHEBASICManager2_H_
 
 #include "ModuleManager.h"
 #include "BaseStorage.h"
@@ -38,10 +38,19 @@ SOFTWARE.
 #include "RangeData.h"
 #include "PacketTypeBase.h"
 #include "NodeManager.h"
+#include "BaseFileStorage.h"
 
 class CacheBasicManager2:public ModuleManager
 {
 public:
+  enum CachePacketType {
+    Invalid,
+    IcnDefault,
+    IcnFile,
+
+    maxTypes
+  };
+
   CacheBasicManager2 ();
 
   CacheBasicManager2 (ConfigWrapper & config);
@@ -54,6 +63,11 @@ public:
 
   virtual bool AddConfig (UtilityHandlerBase * uc, uint16_t position = 0);
 
+  virtual void GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist );
+  virtual void CacheHdrHit(PktType &interest);
+  virtual void CacheIcnHit(PktType &interest);
+  virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
+
   //delete Configs by name or number
 
   static const dataNameType_t & IdName (void)
@@ -65,12 +79,14 @@ public:
   //store connectivity
 
   void SetStore (StoreManager *);
-
+  void DumpStore (std::ostream &os);
+  void PrintStore ();
   void OnPktIngress (PktType & interest);       //Rx
   void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
 
   void StoreActionsDone (const std::list < StoreEvents > &list);
-  void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
+  void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list, bool isFile);
+  //void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
   void DoStoreActions (const std::list < StoreEvents > &list);
 
 private:
@@ -79,20 +95,36 @@ private:
   void OnDataInterestPktIngress (PktType & interest);
   void OnControlPktIngress (PktType & control);
   void OnDebugPktIngress (PktType & debug);
-
+  void IcnDefaultAction(PktType &pkt);
+  void IcnFileAction(PktType &pkt);
+  //purge by number of files, aka ICN
+  void PurgeICNContent(PktType &pkt);
+  void PurgeBytesContent(PktType &pkt);
+  
   TypicalCacheStore *m_cacheStore;
+  //TypicalCacheStore *m_cacheFileStore;
   uint64_t m_storageLimit;
 
   std::string m_cacheStoreName;
 
   std::string m_statsMiss;
+  std::string m_statsMissNotFound;
   std::string m_statsHit;
   std::string m_statsHitExpired;
-
+  std::string m_statsFileHit;
+  std::string m_statsFileMiss;
+  std::set<std::string> m_namesPerOrigin;
   double m_dropValue;
   std::string m_moduleName; //hierarchical name: nodeName/moduleName
   bool m_useStore;
   bool m_protectInsert;
+  CachePacketType m_contentType;
+  const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
+  AcclContentName m_matchHeaderName;
+  BaseFileStorage  m_fileStore;  //FIXME TODO set max size of fileStore
+  std::string m_myNodeName;
+  bool m_deleteByValue;
+  uint32_t m_lowerCacheWatermark;
 };
 
 #endif
