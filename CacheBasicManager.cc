@@ -624,7 +624,7 @@ CacheBasicManager::LocalStoreDelete(const std::list < std::pair < double, AcclCo
         m_fileStore.DeleteFile(name);
       }
 
-      std::cout << "Erased " << name << " with a value of " << name << "\n";
+      std::cout << "Erased " << name << " with a value of " << itl->first << "\n";
 
       m_PktNames.erase (name);
     }

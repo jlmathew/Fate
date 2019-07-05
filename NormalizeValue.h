@@ -50,12 +50,26 @@ SOFTWARE.
 #include <stdexcept>
 #include "ContentName.h"
 #include "UtilityConfigBase.h"
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <cfloat>
+#include <cfenv>
+#include <type_traits>
 
 template<class T>
 class Normalize
 {
 public:
-  Normalize() { }
+  Normalize() { 
+  
+    if (std::is_floating_point<T>::value)
+       { m_retMinType= std::nextafter(0.0,1.0); }
+    else if (std::is_integral<T>::value )
+          { m_retMinType=1.0; }
+    else 
+    {}
+  }
   Normalize(ConfigWrapper &config) {
     Config(config);
   }
@@ -84,6 +98,8 @@ public:
     static const dataNameType_t idName ("Normalized");
     return idName;
   }
+  protected:
+  double m_retMinType;
 
 };
 
@@ -138,6 +154,7 @@ protected:
   std::multiset<T> m_values;
   T GetMinimum();
   T GetMaximum();
+
 };
 
 //evaluate if RangeData in range (A,C)
@@ -210,15 +227,17 @@ public:
     os << "_Ngi" << m_invert << "b" << m_bias;
   }
 
+  //best if VAL is integer only, close FP numbers may give > 1
   double EvaluateValue(T val)
   {
     double ret = 1.0;
     if (this->m_values.empty())
       return 0.0;
-    
+    T min = *(this->m_values).cbegin(); //need something better?
     if (m_bias) {
-        T min = *(this->m_values).cbegin(); //need something better?
-        ret = 1.0/(val-min+1.0);
+        //ret = 1.0/(val-min+Normalize<T>::m_retMinType);
+        ret = 1.0/(val-min+this->m_retMinType);
+        //ret = 1.0/(val-min+1.0);
     } else {
       if (val != 0.0) {
 	ret = 1.0/val;
@@ -227,6 +246,7 @@ public:
     if (m_invert) {
       ret = 1.0-ret;
     }
+    assert(ret <= 1.0); 
     return ret;
   }
   static const dataNameType_t & IdName (void)
@@ -295,7 +315,9 @@ public:
       typeval = (double) (static_cast<double>(val-min))/(max-min);
       break;
     case ceiling:  // can NOT be 0.0, better for integer values
-      typeval = (double) (static_cast<double>(val-min)+1.0)/(max-min+1.0);
+      typeval = (double) (static_cast<double>(val-min)+this->m_retMinType)/(max-min+this->m_retMinType);
+      //typeval = (double) (static_cast<double>(val-min)+Normalize<T>::m_retMinType)/(max-min+Normalize<T>::m_retMinType);
+      //typeval = (double) (static_cast<double>(val-min)+1.0)/(max-min+1.0);
       break;
     case fullRange:  // can NOT be 0.0
       typeval = (double) (val)/(max);
@@ -307,6 +329,7 @@ public:
     if (m_invert) {
       typeval = 1.0-typeval;
     }
+    assert(typeval<=1);
     return typeval;
   }
 
