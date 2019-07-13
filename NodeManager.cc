@@ -196,6 +196,17 @@ void
      }
 
 void
+NodeManager::DumpAll(std::ostream &os) const
+{
+  
+  std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
+  while (it != m_moduleEval.end ())
+    {
+      (*it)->DumpStore (os);
+      it++;
+    }
+}
+void
      NodeManager::Print (std::ostream & os, const AcclContentName & Name, double &value) const
      {
        std::vector < ModuleManager * >::const_iterator it = m_moduleEval.end ();

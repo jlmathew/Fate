@@ -37,6 +37,7 @@ SOFTWARE.
 #include "SecurityBasicManager.h"
 #include "SecurityCachePoisonManager.h"
 #include "CacheBasicManager.h"
+#include "PreCacheManager.h"
 #include "CacheBasicManager2.h"
 
 //For Ns3 Ipv4 packets, conditional compile may be necessary
@@ -188,6 +189,10 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
   else if (!name.compare (ForwardBasicManager::IdName ()))
   {
     return new ForwardBasicManager (config);
+  }
+  else if (!name.compare(PreCacheManager::IdName()))
+  {
+    return new PreCacheManager(config);
   }
   else if (!name.compare(NodeManager::IdName()))
   {

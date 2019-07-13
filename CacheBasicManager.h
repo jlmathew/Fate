@@ -83,7 +83,6 @@ public:
   void PrintStore ();
   void OnPktIngress (PktType & interest);       //Rx
   void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
-
   void StoreActionsDone (const std::list < StoreEvents > &list);
   void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list, bool isFile);
   //void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);

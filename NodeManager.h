@@ -70,7 +70,7 @@ public:
 
   //store connectivity
 
-
+  virtual void DumpAll (std::ostream &os) const;
   virtual void OnPktIngress (PktType & interest);       //Rx
   virtual void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
   virtual void Print (std::ostream & os) const;

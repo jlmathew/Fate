@@ -356,7 +356,6 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
 }
 
 
-
 //Get all ranks, then purge FIXME TODO.
 //insert new content, evaluate it, and purge low/least value content
 void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList) {
@@ -604,7 +603,8 @@ CacheBasicManager::StoreActionsDone(const std::list < StoreEvents > &list) {
 
   void CacheBasicManager::DumpStore (std::ostream &os) {
      for(auto it =m_PktNames.begin(); it != m_PktNames.end(); it++) {
-         Value(*it);
+         double a = Value(*it);
+	 os << "[" << *it << "," << a << "]\n"; 
      }
   }
   void CacheBasicManager::PrintStore () { DumpStore(std::cout); }

@@ -448,6 +448,14 @@ ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< doubl
 }
 
 void
+ModuleManager::DumpStore(std::ostream &os)
+{}
+void
+ModuleManager::DumpAll(std::ostream &os)
+{
+	m_myNodeRootModule->DumpAll(os);
+}
+void
 ModuleManager::LogStats (std::ostream & os)
 {
 	m_stats->DumpStats(os);
