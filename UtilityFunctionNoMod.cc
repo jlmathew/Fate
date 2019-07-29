@@ -952,9 +952,9 @@ UtilityEgressCount::EstMemoryUsed (void) const
 
 //evaluate based upon attribute value
 UtilityU64ValuationEval::UtilityU64ValuationEval()
-  : m_normalize(nullptr) {}
+  : m_normalize(nullptr), m_temp(false) {}
 UtilityU64ValuationEval::UtilityU64ValuationEval(ConfigWrapper &config)
-  : m_normalize(nullptr) {
+  : m_normalize(nullptr), m_temp(false) {
   Config(config);
 }
 UtilityU64ValuationEval::~UtilityU64ValuationEval() {
@@ -967,7 +967,7 @@ UtilityU64ValuationEval::~UtilityU64ValuationEval() {
 void UtilityU64ValuationEval::OnPktIngress (PktType &data) {
   uint64_t value=0;
   AcclContentName name = data.GetAcclName ();
-  bool attribExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
+  bool attribExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value, m_temp);
 
   if (attribExists) {
     uint64_t retValue;
@@ -1003,6 +1003,8 @@ void UtilityU64ValuationEval::Config (ConfigWrapper & config) {
     m_normalize->Print(ss);
     m_name.append(ss.str());
   }
+    m_temp = config.GetAttributeBool ("useTempAttribute", m_temp);
+  m_name.append("ta"+std::to_string(m_temp));
   //set other values
   m_scratchpad = new StorageClass < dataNameType_t, uint64_t >;
 
@@ -1029,8 +1031,10 @@ uint64_t UtilityU64ValuationEval::EstMemoryUsed (void) const {
 
 //evaluate based upon attribute value
 UtilityNormValuationEval::UtilityNormValuationEval()
+	:m_temp(true)
    {}
 UtilityNormValuationEval::UtilityNormValuationEval(ConfigWrapper &config)
+	:m_temp(true)
   {
   Config(config);
 }
@@ -1042,7 +1046,7 @@ UtilityNormValuationEval::~UtilityNormValuationEval() {
 void UtilityNormValuationEval::OnPktIngress (PktType &data) {
   double value=0.0;
   AcclContentName name = data.GetAcclName ();
-  bool attribExists = data.GetNamedAttribute (m_defaultAttribute, value, true);
+  bool attribExists = data.GetNamedAttribute (m_defaultAttribute, value, m_temp);
 
   if (attribExists) {
     m_scratchpad->SetData(name, value);
@@ -1063,6 +1067,9 @@ void UtilityNormValuationEval::Config (ConfigWrapper & config) {
   {
     m_name = IdName ();
   }
+    m_temp = config.GetAttributeBool ("useTempAttribute", m_temp);
+  m_name.append("ta"+std::to_string(m_temp));
+
   //set other values
   m_scratchpad = new StorageClass < dataNameType_t, double >;
 

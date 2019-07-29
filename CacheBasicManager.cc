@@ -293,8 +293,14 @@ void CacheBasicManager::PurgeICNContent(PktType &pkt)
   //dont purge if already in cache
   if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
 
+  if(!m_protectInsert) {
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
+    m_PktNames.insert(pkt.GetAcclName());
+   }
+
   //FIXME TODO remove m_protectInsert, we have it as a utility.
   if ((m_PktNames.size()+(int) m_protectInsert)  > m_storageLimit) {
+  //if ((m_PktNames.size())  > m_storageLimit) {
     std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
     //Compute();
     CacheDataHandler(pkt, PktList);
@@ -311,7 +317,8 @@ void CacheBasicManager::PurgeICNContent(PktType &pkt)
       LocalStoreDelete(PktListWm, false);
     }
 
-  } else {
+  } 
+  if (m_protectInsert) {
     m_cacheStore->SetData(pkt.GetAcclName(), pkt);
     m_PktNames.insert(pkt.GetAcclName());
   }

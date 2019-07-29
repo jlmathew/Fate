@@ -398,6 +398,7 @@ public:
 
 private:
   class StorageClass < dataNameType_t, double >*m_scratchpad;
+  bool m_temp;
 
 };
 
@@ -420,7 +421,7 @@ public:
 
   static const dataNameType_t & IdName (void)
   {
-    static const dataNameType_t idName ("NormalizedEval");
+    static const dataNameType_t idName ("RawEval");
     return idName;
   }
 
@@ -431,8 +432,10 @@ public:
 private:
   class StorageClass < dataNameType_t, uint64_t >*m_scratchpad;
   class Normalize<uint64_t> *m_normalize;
+  bool m_temp;
 
 };
+
 
 //protect for last inserted elements
 class UtilityProtLastElement:public UtilityHandlerBase
@@ -463,6 +466,7 @@ private:
    dataNameType_t m_lastElementSeen;
    bool m_lastElemValid;
 };
+//TODO FIXME not tested or implemented JLM
 class UtilityRegexMatch:public UtilityHandlerBase
 {
 public:
