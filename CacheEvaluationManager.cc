@@ -33,20 +33,27 @@ SOFTWARE.
 
 
 CacheEvaluationManager::CacheEvaluationManager()
-  : m_storageLimit(0)
+  : m_cacheStore(nullptr)
+  , m_storageLimit(0)
+  , m_cacheStoreName("None")
+  , m_dropValue(0.0)
   , m_protectInsert(false)
   , m_contentType(IcnDefault)
-  , m_attribName("LfuEval")
-  , m_fieldTemp(true)
+  , m_deleteByValue(false)
+  , m_storageLimitTracked(0)
 {
 }
 
 CacheEvaluationManager::CacheEvaluationManager(ConfigWrapper & config)
-  : m_storageLimit(0)
+  : //ModuleManager::ModuleManager(config)
+    m_cacheStore(nullptr)
+  , m_storageLimit(0)
+  , m_cacheStoreName("None")
+  , m_dropValue(0.0)
   , m_protectInsert(false)
   , m_contentType(IcnDefault)
-  , m_attribName("LfuEval")
-  , m_fieldTemp(true)
+  , m_deleteByValue(false)
+  , m_storageLimitTracked(0)
 {
   Config(config);
 }
@@ -65,16 +72,22 @@ bool
 CacheEvaluationManager::OnInit(UtilityExternalModule * module) {
   ModuleManager::OnInit(module);
   //get cache store association
+  if ((m_useStore) && (NULL == m_cacheStore)) {
+    m_cacheStore = dynamic_cast<TypicalCacheStore *> ((module->GetDevice()->GetSelfNode())->GetStore(m_cacheStoreName));
+  }
   m_myNodeName = (module->GetDevice()->GetSelfNode())->Name();
   //should make this an easy subroutine
   m_statsMiss = createHeirarchicalStatName("TotalCacheMiss");
   m_statsMissNotFound = createHeirarchicalStatName("TotalCacheMissNotFound");
   m_statsHit = createHeirarchicalStatName("TotalCacheHit");
   m_statsHitExpired = createHeirarchicalStatName("TotalCacheHitExpired");
+  m_statsExtendedHit = createHeirarchicalStatName("ExtendedHit");
   m_stats->SetStats(m_statsMiss, (uint64_t) 0);
   m_stats->SetStats(m_statsMissNotFound, (uint64_t) 0);
   m_stats->SetStats(m_statsHit, (uint64_t) 0);
   m_stats->SetStats(m_statsHitExpired, (uint64_t) 0);
+  m_stats->SetStats(m_statsExtendedHit, (uint64_t) 0);
+  m_stats->SetStats(m_statsExtendedMiss, (uint64_t) 0);
   return true;
 }
 
@@ -84,8 +97,15 @@ CacheEvaluationManager::Config(ConfigWrapper & config) {
   if (!m_useAlias) {
     m_name = IdName();
   }
+  m_cacheStoreName = config.GetAttribute("associatedStore", m_cacheStoreName.c_str());
+  m_storageLimit = config.GetAttribute("cacheSize", m_storageLimit);
+  m_dropValue = config.GetAttribute("minDropValue", m_dropValue);
+  if (m_cacheStoreName.compare("None")) {
+    m_useStore = true;
+  } else {
+    m_useStore = false;
+  }
   m_protectInsert = config.GetAttributeBool("protNewPkt", m_protectInsert);
-  m_fieldTemp = config.GetAttributeBool("fieldUseTemp", m_fieldTemp);
   std::string ctype;
   ctype = config.GetAttribute("ContentTypes", m_contentTypeNames[m_contentType]);
   if (ctype != m_contentTypeNames[m_contentType]) {
@@ -96,10 +116,19 @@ CacheEvaluationManager::Config(ConfigWrapper & config) {
     else
       m_contentType = IcnDefault;
   }
-  m_storageLimit = config.GetAttribute("cacheTrackingSize", m_storageLimit);
-  m_attribName=config.GetAttribute("setAttribName",m_attribName);
+  m_storageLimit = config.GetAttribute("cacheLowerWaterMark", m_storageLimit);
+  m_storageLimitTracked = config.GetAttribute("cacheTrackingSize", m_storageLimitTracked);
+
 }
 
+void
+CacheEvaluationManager::SetStore(StoreManager * store) {
+  if (m_cacheStore)
+    delete m_cacheStore;
+
+  m_useStore = true;
+  m_cacheStore = dynamic_cast<TypicalCacheStore *> (store);
+}
 
 void
 CacheEvaluationManager::OnPktIngress(PktType & pkt) {
@@ -122,6 +151,23 @@ CacheEvaluationManager::OnPktIngress(PktType & pkt) {
 
 void
 CacheEvaluationManager::OnDebugPktIngress(PktType & debug) {
+  /*switch (cmd) {
+     case hitRatio:
+     break;
+     case namevalue:
+     break;
+     case allnames:
+     break;
+     case allnamevalues:
+     break;
+     case purgednamevalues:
+     break;
+     case allnameformula;
+     break;
+     case purgednameformula;
+     break;
+
+  }*/
 }
 
 void
@@ -135,6 +181,7 @@ CacheEvaluationManager::OnDataInterestPktIngress(PktType & interest) {
     IcnDefaultAction(interest);
     break;
   case IcnFile:
+    assert(0); //simply put, we did not add code to this section, USER beware!  TODO FIXME JLM
     IcnFileAction(interest);
     break;
   default:
@@ -144,14 +191,92 @@ CacheEvaluationManager::OnDataInterestPktIngress(PktType & interest) {
 
 void
 CacheEvaluationManager::IcnFileAction(PktType & interest) {
-	uint64_t tmp=0;
-  bool header = interest.GetUnsignedNamedAttribute("Header", tmp, m_fieldTemp);
+  //if header exists, file might
+  //assume byte requests are file data, non byte requests are headers or single
+  //FIXME TODO is this sufficient to replace 'IcnDefault' cache handling?
+  uint64_t byteStart = 0, byteEnd = 0;
+  bool nonheader = interest.GetUnsignedNamedAttribute("ByteStart", byteStart);
+  nonheader = nonheader & interest.GetUnsignedNamedAttribute("ByteEnd", byteEnd);
+  uint64_t tmp;
+  bool header = interest.GetUnsignedNamedAttribute("Header", tmp);
   AcclContentName name = interest.GetAcclName();
   //new data, may need to purge
   //ModuleManager::OnPktIngress(interest); //let utilities judge it
-  if (header)
-	  IcnDefaultAction(interest);
+  if (interest.GetPacketPurpose() & PktType::DATAPKT) {
+    if (header || (!header && !nonheader)) {
+      ModuleManager::OnPktIngress(interest); //let utilities judge it
+      CacheHdrHit(interest);
+      //Create file entries, header has info
+      uint64_t totalsize=0;
+      bool sizeexist = interest.GetUnsignedNamedAttribute("TotalSize", totalsize);
+      if (sizeexist)
+        m_fileStore.SetFileSize(interest.GetAcclName(), totalsize);
 
+      //std::list < std::pair < double, AcclContentName> > PktList;
+      //FIXME TODO need to loop until size in range
+      if (header || nonheader) {
+        PurgeBytesContent(interest);
+      }
+      else {
+        PurgeICNContent(interest);
+      }
+
+    } else if (nonheader) { //request for file range
+      std::string strData;
+      bool valid = interest.GetNamedAttribute("DATA", strData);
+      if (!valid)
+        return; //FIXME should we exit here?
+
+      //only store if we have seen header before
+      auto it = m_PktNames.find(interest.GetAcclName());
+      if (m_PktNames.end() == it)
+        return;
+
+      std::vector<uint8_t> data;
+      for(unsigned int i=0; i<strData.size(); i++) {
+        data.push_back(strData[i]);
+      }
+
+      m_fileStore.SetDataRange(name, byteStart, byteEnd, data);
+    }
+  }        //interest matching
+  else if (interest.GetPacketPurpose() & PktType::INTERESTPKT) {
+    if (header || (!header && !nonheader)) {
+      ModuleManager::OnPktIngress(interest); //let utilities judge it
+      CacheHdrHit(interest);
+
+    } else if (nonheader) {
+      //ModuleManager::OnPktIngress(interest); //let utilities judge it
+      std::vector<uint8_t> data;
+      data.resize(byteEnd-byteStart+1);
+      bool exist = m_fileStore.GetDataRange(name,byteStart, byteEnd, data);
+      if (exist) {
+        LOG("Cache Segment Hit %s : byteStart %d \n", interest.GetName().GetFullName().c_str(), byteStart);
+        interest.SetNamedAttribute("CacheHit", 1.0, true);
+        interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+        std::string strData(data.begin(),data.end());
+        interest.SetNamedAttribute("DATA", strData);
+
+	          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/HitSegment");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+		  m_namesPerOrigin.insert(pathMissName);
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+	  } 
+	  m_stats->IncStats(pathMissName);
+      } else {
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/MissSegment");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
+      }
+    }
+  }
+//check
+  std::cout << "cache file done\n" << interest << "\n";
 }
 
 void
@@ -170,51 +295,113 @@ CacheEvaluationManager::IcnDefaultAction(PktType & interest) {
 
 void CacheEvaluationManager::PurgeICNContent(PktType &pkt)
 {
+  if (!m_useStore) {
+    return;
+  }
   //dont purge if already in cache
-  if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
+ // if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
 
   if(!m_protectInsert) {
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
     m_PktNames.insert(pkt.GetAcclName());
    }
 
   //FIXME TODO remove m_protectInsert, we have it as a utility.
-  if ((m_PktNames.size()+(int) m_protectInsert)  > m_storageLimit) {
-  //if ((m_PktNames.size())  > m_storageLimit) {
-    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
-    //Compute();
-    CacheDataHandler(pkt, PktList);
-    //Delete extra up to lower watermark
-    if (m_PktNames.size() > m_storageLimit) {
-      auto itb = PktList.begin();
-      auto ite = itb;
-      advance(ite, m_PktNames.size()-m_storageLimit);
-      std::list < std::pair < double, AcclContentName> > PktListWm (itb, ite); //itb+m_PktNames.size()-m_lowerCacheWaterMark);
-      LocalStoreDelete(PktListWm);
-    }
+  std::list < std::pair < double, AcclContentName> > PktList, PktListExcess;
+  //CacheDataHandler(pkt, PktList);
+  std::cout << "storage is " << m_cacheStore->size() << " / " << m_storageLimit << ", extended limit of " << m_PktNames.size() << " / " << m_storageLimitTracked << "\n";
 
-  } 
+
+  if ((m_cacheStore->size()+(int) m_protectInsert)  > m_storageLimit) {
+	  auto pairval =m_cacheStore->GetDataAsList();
+	  std::list< std::string > templist;
+	  for (auto itt=pairval->begin(); itt!=pairval->end(); itt++) {
+             templist.push_back(itt->first);
+	  }
+    GetLowestNValuesGivenPackets( m_cacheStore->size()+(int) m_protectInsert-m_storageLimit, PktListExcess, templist);
+
+    LocalStoreDelete(PktListExcess, "storage", false, false);
+  }
+  std::cout << "2 storage is " << m_cacheStore->size() << " / " << m_storageLimit << ", extended limit of " << m_PktNames.size() << " / " << m_storageLimitTracked << "\n";
+    
+    if (m_PktNames.size() > m_storageLimitTracked) {
+	    PktListExcess.clear();
+    std::list<std::string> m_PktNameList(m_PktNames.begin(), m_PktNames.end());
+    GetLowestNValuesGivenPackets( m_PktNames.size()+(int) m_protectInsert-m_storageLimitTracked, PktListExcess, m_PktNameList);
+      LocalStoreDelete(PktListExcess, "extended", false, true);
+    }
+  std::cout << "3 storage is " << m_cacheStore->size() << " / " << m_storageLimit << ", extended limit of " << m_PktNames.size() << " / " << m_storageLimitTracked << "\n";
+
   if (m_protectInsert) {
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
     m_PktNames.insert(pkt.GetAcclName());
   }
 
 }
+void CacheEvaluationManager::PurgeBytesContent(PktType &pkt)
+{
+  if (!m_useStore) {
+    return;
+  }
+
+  //dont purge if already in cache
+  if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
+
+
+  uint64_t totalSize=0;
+  pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
+  if ( (m_fileStore.GetTotalBytesUsed()-(m_protectInsert)*totalSize) > (m_storageLimit)) {
+    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
+    //Compute();
+    CacheDataHandler(pkt, PktList);
+    GetObsoleteList(PktList, obsoletePktList);
+    if (obsoletePktList.size()) {
+      LocalStoreDelete(obsoletePktList, "filesize", true, false);
+    }
+    while (( m_fileStore.GetTotalBytesUsed()-m_protectInsert*totalSize) > (m_storageLimit) && PktList.size()) {
+      auto first = PktList.begin();
+      auto last = first;
+      ++last;
+      std::list < std::pair < double, AcclContentName> > PktListWm (first, last);
+      PktList.erase(first);
+      LocalStoreDelete(PktListWm, "file ", true, false);
+    }
+  } else {  //room in cache
+    m_cacheStore->SetData(pkt.GetAcclName(), pkt);
+    m_PktNames.insert(pkt.GetAcclName());
+
+
+  }
+
+}
+
 
 //Get all ranks, then purge FIXME TODO.
 //insert new content, evaluate it, and purge low/least value content
 void CacheEvaluationManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList) {
 
-
-  if (!m_protectInsert) {
+  //insert file if not protected
+ /* if (!m_protectInsert) {
+    if (m_useStore) {
+      m_cacheStore->SetData(interest.GetAcclName(), interest);
+    }
     m_PktNames.insert(interest.GetAcclName());
-  }
+  }*/
 
+
+
+  //RangeData < double >valueRange(0.0, m_dropValue);
   Compute();
   GetLowestNPackets (m_PktNames.size(), PktList);  //Need to test this first
 
+
   //protected insertion
-  if (m_protectInsert) {
+ /* if (m_protectInsert) {
+    if (m_useStore) {
+      m_cacheStore->SetData(interest.GetAcclName(), interest);
+    }
     m_PktNames.insert(interest.GetAcclName());
-  }
+  }*/
 }
 
 void CacheEvaluationManager::CacheIcnHit(PktType & interest) {
@@ -229,19 +416,78 @@ void CacheEvaluationManager::CacheIcnHit(PktType & interest) {
     Compute(interest.GetAcclName());
     double value = Value(interest.GetAcclName());
 
-      LOG("Cache Eval Hit %s %f\n", interest.GetName().GetFullName().c_str(), value);
-      interest.SetNamedAttribute(m_attribName, value, m_fieldTemp);
+    if (value <= m_dropValue) {
+      LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());
+      interest.SetNamedAttribute("CacheHit", 0.0, true);
       //m_statsHitExpired++;
       if (m_stats)
         m_stats->IncStats(m_statsHitExpired);
+    } else {
+      PktType newPacket;
+      bool stat = m_cacheStore->ExistData(interest.GetAcclName(), newPacket);
+      if (stat) {  //cachehit
+        LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
 
+        //Get DATA from cached packet
+        //FIXME TODO jlm
+        //This should be replaced by white/black/red chained lists
+        interest.SetNamedAttribute("CacheHit", 1.0, true);
+        interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+        std::string datavctr;
+
+        //FIXME TODO JLM create linked list of red/black/white lists and apply them
+        //RED LIST Copy #segments, byte range and size, etc
+        //For non headers, non segment packets (typical ICN)
+        bool data = newPacket.GetNamedAttribute("DATA", datavctr);
+        if (data)
+        {
+          interest.SetNamedAttribute("DATA", datavctr);
+        }
+        uint64_t value=0;
+        bool exists = newPacket.GetUnsignedNamedAttribute("Segments", value);
+        if (exists)
+        {
+          interest.SetUnsignedNamedAttribute("Segments", value);
+        }
+
+        //m_statsHit++;
+        if (m_stats)
+        {
+          m_stats->IncStats(m_statsHit);
+	  //stats by origin
+          std::string pathHitName =  createHeirarchicalStatName(interest.GetName().GetPath()+"/Hits");
+	  auto it=m_namesPerOrigin.find(pathHitName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathHitName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathHitName);
+	  } 
+	  m_stats->IncStats(pathHitName);
+        }
+      } else {  //not in store
+        LOG("Cache Hit, but not found : Miss %s\n", interest.GetName().GetFullName().c_str());
+        interest.SetNamedAttribute("CacheHit", 0.0, true);
+        if (m_stats) {
+          m_stats->IncStats(m_statsMissNotFound);
+	  	  //stats by origin
+          std::string pathHitMissName =  createHeirarchicalStatName(interest.GetName().GetPath()+"/HitMissNotFound");
+	  auto it=m_namesPerOrigin.find(pathHitMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathHitMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathHitMissName);
+	  } 
+	  m_stats->IncStats(pathHitMissName);
+	  m_stats->IncStats(m_statsExtendedHit);
+
+	}
+      }
+    }
   } else { //give interest packet HIGH value
-    LOG("Cache Eval Miss %s 0\n", interest.GetName().GetFullName().c_str());
-    interest.SetNamedAttribute(m_attribName, 0.0, m_fieldTemp);
+    LOG("Cache Miss %s\n", interest.GetName().GetFullName().c_str());
+    interest.SetNamedAttribute("CacheHit", 0.0, true);
     if (m_stats) {
       m_stats->IncStats(m_statsMiss);
       	  //stats by origin
-          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/ExtendedMiss");
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Miss");
 	  auto it=m_namesPerOrigin.find(pathMissName);
 	  if (it == m_namesPerOrigin.end()) {
             m_stats->SetStats(pathMissName,(uint64_t) 0);
@@ -267,22 +513,76 @@ void CacheEvaluationManager::CacheHdrHit(PktType & interest) {
     Compute(interest.GetAcclName());
     double value = Value(interest.GetAcclName());
 
-    interest.SetNamedAttribute(m_attribName, value, m_fieldTemp);
 //non multiple packets fail with a value of 0, for some reason JLM FIXME TODO
 std::cout << interest.GetAcclName() << " has value of " << value << "\n";
 
-      LOG("Hdr Extended Cache Eval Hit %s %f\n", interest.GetName().GetFullName().c_str(), value);
+    if (value <= m_dropValue) {
+      LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());
+PrintStore();
+      interest.SetNamedAttribute("CacheHit", 0.0, true);
+      //m_statsHitExpired++;
+      if (m_stats) {
+        m_stats->IncStats(m_statsHitExpired);
+    	  //stats by origin
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/HitExpired");
+	  auto it=m_namesPerOrigin.find(pathMissName);
+	  if (it == m_namesPerOrigin.end()) {
+            m_stats->SetStats(pathMissName,(uint64_t) 0);
+		  m_namesPerOrigin.insert(pathMissName);
+	  } 
+	  m_stats->IncStats(pathMissName);
+	
+      }
+    } else {
+      LOG("Cache Hit %s\n", interest.GetName().GetFullName().c_str());
 
       //Get DATA from cached packet
       //FIXME TODO jlm
       //This should be replaced by white/black/red chained lists
       PktType newPacket;
+      bool stat = m_cacheStore->ExistData(interest.GetAcclName(), newPacket);
+      if (stat) {  //cachehit
+        interest.SetNamedAttribute("CacheHit", 1.0, true);
+        interest.SetNamedAttribute("CacheNodeName", m_myNodeName);
+        std::string datavctr;
+
+        //FIXME TODO JLM create linked list of red/black/white lists and apply them
+        //RED LIST Copy #segments, byte range and size, etc
+        //For non headers, non segment packets (typical ICN)
+        bool data = newPacket.GetNamedAttribute("DATA", datavctr);
+        if (data)
+        {
+          interest.SetNamedAttribute("DATA", datavctr);
+        }
+        uint64_t value;
+        bool exists;
+        //Segments redlist (for headers with segments
+        exists = newPacket.GetUnsignedNamedAttribute("Segments", value);
+        if (exists)
+        {
+          interest.SetUnsignedNamedAttribute("Segments", value);
+        }
+        //TotalSize redList
+        exists = newPacket.GetUnsignedNamedAttribute("TotalSize", value);
+        if (exists)
+        {
+          interest.SetUnsignedNamedAttribute("TotalSize", value);
+        }
+        //SegSize redlist
+        exists = newPacket.GetUnsignedNamedAttribute("SegSize", value);
+        if (exists)
+        {
+          interest.SetUnsignedNamedAttribute("SegSize", value);
+        }
+
+
+      }
 
       //m_statsHit++;
       if (m_stats) {
         m_stats->IncStats(m_statsHit);
 		  //stats by origin
-          std::string pathHitName = createHeirarchicalStatName(interest.GetName().GetPath()+"/ExtendedHits");
+          std::string pathHitName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Hits");
 	  auto it=m_namesPerOrigin.find(pathHitName);
 	  if (it == m_namesPerOrigin.end()) {
             m_stats->SetStats(pathHitName,(uint64_t) 0);
@@ -291,13 +591,14 @@ std::cout << interest.GetAcclName() << " has value of " << value << "\n";
 	  m_stats->IncStats(pathHitName);
 
       }
+    }
   } else { //give interest packet HIGH value
-    LOG("Hdr Extended Cache Eval Miss %s 0\n", interest.GetName().GetFullName().c_str());
-    interest.SetNamedAttribute(m_attribName, 0.0, m_fieldTemp);
+    LOG("Cache Miss %s\n", interest.GetName().GetFullName().c_str());
+    interest.SetNamedAttribute("CacheHit", 0.0, true);
     if (m_stats) {
       m_stats->IncStats(m_statsMiss);
     	  //stats by origin
-          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/ExtendedMiss");
+          std::string pathMissName = createHeirarchicalStatName(interest.GetName().GetPath()+"/Miss");
 	  auto it=m_namesPerOrigin.find(pathMissName);
 	  if (it == m_namesPerOrigin.end()) {
             m_stats->SetStats(pathMissName,(uint64_t) 0);
@@ -317,6 +618,10 @@ CacheEvaluationManager::OnPktEgress(PktType & data, const PktTxStatus & status) 
   ModuleManager::OnPktEgress(data, status); //let utilities judge it
 }
 
+void
+CacheEvaluationManager::StoreActionsDone(const std::list < StoreEvents > &list) {
+}
+
   void CacheEvaluationManager::DumpStore (std::ostream &os) {
      for(auto it =m_PktNames.begin(); it != m_PktNames.end(); it++) {
          double a = Value(*it);
@@ -328,18 +633,75 @@ CacheEvaluationManager::OnPktEgress(PktType & data, const PktTxStatus & status) 
 //StoreActionsDone JLM FIXME
 
 void
-CacheEvaluationManager::LocalStoreDelete(const std::list < std::pair < double, AcclContentName> > &list) {
-  ModuleManager::LocalStoreDelete(list);
+CacheEvaluationManager::LocalStoreDelete(const std::list < std::pair < double, AcclContentName> > &list, const std::string &reason, bool isFile, bool pktNameErase) {
+  //ModuleManager::LocalStoreDelete(list);
 
+std::list < std::pair < double, AcclContentName> > list2;
+std::cout << "reason: number of items to delete " << list.size() << "\n";
+auto tempmap=m_cacheStore->GetDataAsList();
+std::cout << "reason: Store Items:";
+for(auto it2=tempmap->begin(); it2!=tempmap->end(); it2++)
+{
+   std::cout << it2->first << ",";
+}
+std::cout << "\n";
+delete tempmap;
+
+PktType dummy;
   for (auto itl = list.begin(); itl != list.end(); itl++) {
     {
       AcclContentName name = itl->second;
       //erase store value
+      m_cacheStore->EraseData(name);
+      if (isFile) {
+        m_fileStore.DeleteFile(name);
+      }
 
-      std::cout << "Erased " << name << " with a value of " << itl->first << "\n";
+      std::cout << "reason:" << reason << " Erased " << name << " with a value of " << itl->first << " file exists " << m_cacheStore->ExistData(name, dummy) << " store has size " << m_cacheStore->size()<< "\n";
+      if (pktNameErase) {
       m_PktNames.erase (name);
+      list2.push_back(*itl);
+       }
     }
+    if (pktNameErase) { ModuleManager::LocalStoreDelete(list2); }
+  }
+  //JLM FIX ME need to send out store delete event, or store insert event, as appropriate
+  //we can also log deletions with valuations
+
+}
+
+
+
+//copy obsolete/expired content into new list
+void
+CacheEvaluationManager::GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist ) {
+
+
+  RangeData < double >valueRange(0.0, m_dropValue);
+  for (auto itl = list.begin(); itl != list.end(); itl++) {
+    if (!valueRange.IsInRange(itl->first))
+      return; //values are sorted numerically, we dont need to check each
+
+    AcclContentName name = itl->second;
+    //erase store value, pop onto new list
+    olist.push_back(*itl);
+    itl = list.erase(itl);
+
   }
 }
 
+//JLM FIX ME need to send out store delete event, or store insert event, as appropriate
+//we can also log deletions with valuations
+
+
+/*void
+CacheEvaluationManager::FileStoreDelete(const std::list < std::pair < double, AcclContentName> > &list) {
+
+  for (auto itl = list.begin(); itl != list.end(); itl++) {
+    AcclContentName name = itl->second;
+
+  }
+  }*/
+//JLM FIX ME need to send out store delete event, or store insert event, as appropriate
+//we can also log deletions with valuations
 

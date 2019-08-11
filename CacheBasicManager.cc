@@ -368,12 +368,12 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
 void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair<double, AcclContentName> > &PktList) {
 
   //insert file if not protected
-  if (!m_protectInsert) {
+ /* if (!m_protectInsert) {
     if (m_useStore) {
       m_cacheStore->SetData(interest.GetAcclName(), interest);
     }
     m_PktNames.insert(interest.GetAcclName());
-  }
+  }*/
 
 
 
@@ -383,12 +383,12 @@ void CacheBasicManager::CacheDataHandler(PktType &interest, std::list< std::pair
 
 
   //protected insertion
-  if (m_protectInsert) {
+  /*if (m_protectInsert) {
     if (m_useStore) {
       m_cacheStore->SetData(interest.GetAcclName(), interest);
     }
     m_PktNames.insert(interest.GetAcclName());
-  }
+  } */
 }
 
 void CacheBasicManager::CacheIcnHit(PktType & interest) {

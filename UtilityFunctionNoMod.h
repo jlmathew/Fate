@@ -56,7 +56,10 @@ class LruData
 { //: public UtilitySpecificData {
 public:
   timer_struct_t m_objectTimestamp;
-  LruData() {}
+  LruData() {
+    m_objectTimestamp.tv_sec = 0;
+    m_objectTimestamp.tv_nsec = 0;
+  }
   LruData(const LruData &other) {
     m_objectTimestamp.tv_sec = other.m_objectTimestamp.tv_sec;
     m_objectTimestamp.tv_nsec = other.m_objectTimestamp.tv_nsec;

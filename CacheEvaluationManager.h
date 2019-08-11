@@ -40,17 +40,17 @@ SOFTWARE.
 #include "NodeManager.h"
 #include "BaseFileStorage.h"
 
-
 class CacheEvaluationManager:public ModuleManager
 {
-	private:
-		enum CachePacketEvalType {
-   Invalid,
-   IcnDefault,
-   IcnFile
-};
-
 public:
+  enum CachePacketType {
+    Invalid,
+    IcnDefault,
+    IcnFile,
+
+    maxTypes
+  };
+
   CacheEvaluationManager ();
 
   CacheEvaluationManager (ConfigWrapper & config);
@@ -63,6 +63,7 @@ public:
 
   virtual bool AddConfig (UtilityHandlerBase * uc, uint16_t position = 0);
 
+  virtual void GetObsoleteList( std::list < std::pair < double, AcclContentName> > &list, std::list < std::pair < double, AcclContentName> > &olist );
   virtual void CacheHdrHit(PktType &interest);
   virtual void CacheIcnHit(PktType &interest);
   virtual void CacheDataHandler(PktType &interest, std::list< std::pair<double,AcclContentName>  > &PktList);
@@ -77,13 +78,18 @@ public:
 
   //store connectivity
 
+  void SetStore (StoreManager *);
+  void DumpStore (std::ostream &os);
+  void PrintStore ();
   void OnPktIngress (PktType & interest);       //Rx
   void OnPktEgress (PktType & data, const PktTxStatus & status);        //Rx
-  void DumpStore(std::ostream &os);
-  void PrintStore();
+  void StoreActionsDone (const std::list < StoreEvents > &list);
+  void LocalStoreDelete (const std::list < std::pair< double, AcclContentName> > &list, const std::string &reason, bool isFile, bool delPktName);
+  //void FileStoreDelete (const std::list < std::pair< double, AcclContentName> > &list);
+  void DoStoreActions (const std::list < StoreEvents > &list);
+
 private:
 
-  void LocalStoreDelete(const std::list < std::pair < double, AcclContentName> > &list) ;
   //default actions
   void OnDataInterestPktIngress (PktType & interest);
   void OnControlPktIngress (PktType & control);
@@ -94,8 +100,11 @@ private:
   void PurgeICNContent(PktType &pkt);
   void PurgeBytesContent(PktType &pkt);
   
+  TypicalCacheStore *m_cacheStore;
+  //TypicalCacheStore *m_cacheFileStore;
   uint64_t m_storageLimit;
 
+  std::string m_cacheStoreName;
 
   std::string m_statsMiss;
   std::string m_statsMissNotFound;
@@ -103,17 +112,20 @@ private:
   std::string m_statsHitExpired;
   std::string m_statsFileHit;
   std::string m_statsFileMiss;
+  std::string m_statsExtendedMiss;
+  std::string m_statsExtendedHit;
   std::set<std::string> m_namesPerOrigin;
   double m_dropValue;
   std::string m_moduleName; //hierarchical name: nodeName/moduleName
   bool m_useStore;
   bool m_protectInsert;
-  CachePacketEvalType m_contentType;
+  CachePacketType m_contentType;
   const std::vector< std::string > m_contentTypeNames = {"Invalid","IcnDefault","IcnFile"};
   AcclContentName m_matchHeaderName;
+  BaseFileStorage  m_fileStore;  //FIXME TODO set max size of fileStore
   std::string m_myNodeName;
-  std::string m_attribName;
-  bool m_fieldTemp;
+  bool m_deleteByValue;
+  uint64_t m_storageLimitTracked;
 };
 
 #endif

@@ -101,6 +101,7 @@ public:
   virtual void DumpStore (std::ostream & os);
   virtual void DumpAll (std::ostream & os);
   virtual bool LocalStoreDelete (const AcclContentName & name);
+  virtual void GetLowestNValuesGivenPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &mylist, const std::list < std::string> &mylist2);
 
   virtual void GetPacketsByValue (const RangeData < double >&rng, std::list < std::pair< double, AcclContentName> > &list);
   virtual void GetLowestNPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &list);

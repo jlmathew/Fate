@@ -410,6 +410,43 @@ ModuleManager::LocalStoreDelete (const AcclContentName & name)
 {
   return false;
 }
+void
+ModuleManager::GetLowestNValuesGivenPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &mylist, const std::list < std::string> &mylist2)
+{
+  UtilityHandlerBase *lastBlock = m_utilityEval.back ();
+
+
+  auto cit = mylist2.begin ();
+  typedef std::pair<double, AcclContentName > P;
+  //std::priority_queue< P, std::vector<P>, std::greater_equal<P> > orderQueue;
+  std::priority_queue< P, std::vector<P>, std::greater<P> > orderQueue;
+
+  for (; cit != mylist2.end (); cit++)
+    {
+      double rngVal = lastBlock->Value (*cit);
+      orderQueue.push (make_pair (rngVal, *cit));
+
+    }
+
+
+  uint64_t lowerBound = lowestN;
+  if (lowestN > orderQueue.size ())
+    {
+      lowerBound = orderQueue.size ();
+
+    }
+  //pop the LOWEST values first!
+  for (uint64_t i = 0; i < lowerBound; i++)
+    {
+      std::pair < double, AcclContentName > val = orderQueue.top ();
+
+      orderQueue.pop ();
+      //mylist.push_back (val.second);
+      //lowest to highest is returned
+      mylist.push_back (val);
+    }
+
+}
 
 void
 ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< double, AcclContentName> > &mylist)
@@ -442,6 +479,7 @@ ModuleManager::GetLowestNPackets (uint64_t lowestN, std::list < std::pair< doubl
 
       orderQueue.pop ();
       //mylist.push_back (val.second);
+      //lowest to highest is returned
       mylist.push_back (val);
     }
 
