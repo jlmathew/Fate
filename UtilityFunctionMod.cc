@@ -81,26 +81,29 @@ UtilityFresh::OnPktIngress (PktType & data)
     {
       return;
     }
+  //only update/create when data packets, we dont do any updating on interest
+  if (data.GetPacketPurpose() != PktType::DATAPKT ) 
+  { return; }
+
   double value;
   bool freshExists = data.GetNamedAttribute (m_defaultAttribute, value);;   //does T_EXPIRY exist?
-  if (freshExists)
-    {
-      //JLM FIXME do math on timer struct, not this garbage
+        //JLM FIXME do math on timer struct, not this garbage
       timer_struct_t timeNow = m_externalModule->GetGlobalModule ()->GetGlobalTimer ()->GetTime ();
       timer_struct_t timeExpire;
+
+  if (freshExists)
+    {
 
       timeExpire.tv_sec = timeNow.tv_sec + (int) value;
       timeExpire.tv_nsec = timeNow.tv_nsec + (value - ((int) value)) * 1000000000.0;
       //this is the expiration time
       freshStruct_t timestamp;
-
       timestamp.pktExpire = timeExpire;
       timestamp.pktRx = timeNow;
       m_scratchpad->SetData (data.GetAcclName (), timestamp);
     }
   else if (m_attributeInsert)
     {                           //Not there, add default
-      data.SetNamedAttribute (m_defaultAttribute, m_defaultInsertValue);
       timer_struct_t timeNow = m_externalModule->GetGlobalModule ()->GetGlobalTimer ()->GetTime ();
       timer_struct_t timeExpire;
 
@@ -110,16 +113,9 @@ UtilityFresh::OnPktIngress (PktType & data)
 
       timestamp.pktExpire = timeExpire;
       timestamp.pktRx = timeNow;
+      data.SetNamedAttribute (m_defaultAttribute, m_defValue);
 
       m_scratchpad->SetData (data.GetAcclName (), timestamp);
-    }
-  else
-    {
-      //uint64_t max = (uint64_t) -1;
-      //timer_struct_t expireTime;
-      //expireTime.tv_sec = max;
-      //m_scratchpad->SetData(data.GetAcclName(), expireTime);
-
     }
 }
 
