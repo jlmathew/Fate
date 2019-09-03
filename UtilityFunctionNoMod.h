@@ -124,7 +124,7 @@ public:
   bool
   operator> (const LruData & rhs) const
   {
-    return !(*this>rhs);
+    return !(*this<rhs);
   }
 
   bool
@@ -515,5 +515,131 @@ private:
   class StorageClass < AcclContentName, bool > *m_scratchpad;
   std::string m_optionMatch;
 };
+
+/*
+#include <list>
+class LruDiffData
+{
+public:
+
+  LruDiffData(uint32_t num, const LruData &firstVal) {
+	  m_maxCount=num;
+	  m_objectTimestamp.push_back(firstVal);
+          
+  }
+  virtual ~LruDiffData() {}
+
+  double getAverage() const
+  {
+    LruData fakeNow((uint64_t)(-1));	  
+    return getAverage(fakeNow);
+  }
+  double getAverage(const LruData &now) const
+  {
+	  double retVal = 0.0;
+     auto it1=m_objectTimestamp.begin();
+     auto it2=it1++;
+     for(; it2 != m_objectTimestamp.end(); ++it2) {
+         retVal += *it2-*it1;
+	 it1=it2;
+     }
+     //now for current time
+     retVal += now-*it1;
+     retVal /= m_objectTimestamp.size();
+
+     return retVal;
+  }
+  void addTimestamp(const LruData &now)
+  {
+    m_objectTimestamp.push_back(now);
+    if (m_objectTimestamp.size() > m_maxCount) {
+      m_objectTimestamp.pop_front();
+    }
+  }
+ 
+ void Init(uint32_t mxCnt) { m_maxCount = mxCnt; } 
+   LruDiffData() {
+	  m_maxCount=0;
+  } 
+ LruDiffData & operator=(const LruDiffData &other) {
+    if (this != &other) {
+	    //copy other
+       m_maxCount=other.m_maxCount;
+       m_objectTimestamp.clear();
+       m_objectTimestamp.insert (m_objectTimestamp.begin(),other.m_objectTimestamp.begin(),other.m_objectTimestamp.end());
+       
+    }
+    return *this;
+  }
+
+  LruDiffData(const LruDiffData &other) {
+//copy other
+       m_maxCount=other.m_maxCount;
+       m_objectTimestamp.insert (m_objectTimestamp.begin(),other.m_objectTimestamp.begin(),other.m_objectTimestamp.end());
+  }
+
+  bool
+  operator< (const LruDiffData & rhs) const
+  {
+	return getAverage() < rhs.getAverage();
+
+  }
+  bool
+  operator> (const LruDiffData & rhs) const
+  {
+    return !(*this<rhs);
+  }
+
+  bool
+  operator== (const LruDiffData & rhs) const
+  {
+	  return getAverage() == rhs.getAverage();
+  }
+
+private:
+  uint32_t m_maxCount;
+	std::list<LruData> m_objectTimestamp;
+
+
+};
+
+class UtilityLruDiff:public UtilityHandlerBase
+{
+public:
+  UtilityLruDiff ();
+  UtilityLruDiff (ConfigWrapper & xmlConfig);
+  virtual ~UtilityLruDiff ();
+
+  virtual void Config (ConfigWrapper & xmlConfig);
+
+  virtual void OnPktIngress (PktType & data);   //Rx
+  //virtual void Print(std::ostream & os, const AcclContentName & name, double &value)  const;
+
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("LFUDIFF");
+    return idName;
+  }
+  bool
+OnInit (UtilityExternalModule * outsideData);
+
+  //call Compute before Value, in case need to adjust values in relation to itself
+  //virtual void Compute (const AcclContentName & name);
+  //virtual void Compute ();
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void) const;
+
+  virtual void DoDelete (const AcclContentName & name);
+
+  virtual bool SelfTest(void);
+
+protected:
+  class StorageClass < AcclContentName, LruDiffData > *m_scratchpad;
+  class Normalize<LruDiffData> *m_normalize;
+    uint64_t m_totalHistory;
+};
+*/
 
 #endif

@@ -1238,4 +1238,133 @@ UtilityRegexMatch::SelfTest()
 return true;
 }
 
+//TODO FIXME REGEX and LRUDIFF utilities
+//
+/*
+//rank time differences between requests
+UtilityLruDiff::UtilityLruDiff ()
+  : m_normalize(nullptr)
+{
+}
 
+UtilityLruDiff::UtilityLruDiff (ConfigWrapper & xmlConfig)
+  : m_normalize(nullptr)
+{
+
+  Config (xmlConfig);
+
+}
+
+UtilityLruDiff::~UtilityLruDiff ()
+{ if (m_scratchpad)
+    delete m_scratchpad;
+  if (m_normalize)
+    delete m_normalize;
+
+}
+
+
+void
+UtilityLruDiff::Config (ConfigWrapper & xmlConfig)
+{
+  UtilityHandlerBase::Config(xmlConfig);
+  if (!m_useAlias)
+  {
+    m_name = IdName ();
+  }
+  ConfigWrapper *normConfig = xmlConfig.GetFirstChildUtility("Normalize");
+  if (normConfig->valid()) {
+    m_normalize = NormalizeGenerator<LruDiffData>::CreateNewNormalizeEval(*normConfig);
+    std::stringstream ss;
+    m_normalize->Print(ss);
+    m_name.append(ss.str());
+  }
+
+  m_totalHistory = xmlConfig.GetAttribute ("historySize", m_totalHistory);
+  //m_useNowAsTimeLimit = xmlConfig.GetAttributeBool ("compareToNow", m_useNowAsTimeLimit);
+  //JLM FIXME TODO, put in default
+  m_scratchpad = new StorageClass < AcclContentName, LruDiffData >;
+  m_scratchpad->setStorageType (m_storageMethod);
+}
+
+void
+UtilityLruDiff::DoDelete (const AcclContentName & name)
+{
+  LruDiffData retValue;
+  bool exist = m_scratchpad->ExistData (name, retValue);
+  if (exist) {
+    m_scratchpad->EraseData(name);
+    if (m_normalize) {
+      m_normalize->DeleteValue(retValue);
+    }
+  }
+}
+void
+UtilityLruDiff::OnPktIngress (PktType & data)
+{
+  if (!((m_createEntryMask | m_updateEntryMask) & data.GetPacketPurpose ()))
+  {
+    return;
+  }
+
+  timer_struct_t timeStamp = m_externalModule->GetGlobalModule ()->GetGlobalTimer ()->GetTime ();
+
+
+  LruDiffData lruData2;
+  const AcclContentName name = data.GetAcclName ();
+  bool exist = m_scratchpad->ExistData (name, lruData2);
+
+  if (exist)
+  {
+    m_normalize->DeleteValue(lruData2);
+    lruData2.addTimestamp(timeStamp);
+    m_normalize->InsertValue(lruData2);
+  } else {
+    lruData2.Init( m_totalHistory);
+    lruData2.addTimestamp(timeStamp);
+    m_normalize->InsertValue(lruData2);
+   
+  }
+}
+
+bool
+UtilityLruDiff::OnInit (UtilityExternalModule * outsideData)
+{
+  m_externalModule = outsideData;
+
+  bool status = true;
+  if (m_externalModule == NULL) {
+    status = false;
+  } else  if (m_externalModule->GetGlobalModule () == NULL) {
+    status = false;
+  } else  if (m_externalModule->GetGlobalModule ()->GetGlobalTimer () == NULL) {
+    status = false;
+  }
+  if (!status) {
+    throw std::invalid_argument("Timer not specified in OnInit!");
+  }
+  return status;
+}
+
+
+
+double
+UtilityLruDiff::Value (const AcclContentName & name) const
+{
+  return 0.0;
+}
+
+
+uint64_t
+UtilityLruDiff::EstMemoryUsed (void) const
+{
+  return m_scratchpad->size ();    // * (sizeof(LruDiffData) + 30 ); //EstMemoryUsed();
+}
+
+bool
+UtilityLruDiff::SelfTest()
+{
+  return true;   //jlm FIXME TODO until implemented
+}
+
+*/
