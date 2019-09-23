@@ -47,6 +47,7 @@ SOFTWARE.
 #include "ns3/ForwardNs3Ipv4Manager3.h"   //does not need to be in ns3!! MOVE
 #include "ns3/ForwardNs3Ipv4ManagerF3.h"   //does not need to be in ns3!! MOVE
 #include "ns3/ForwardNs3Ipv4ManagerF2b.h"   //does not need to be in ns3!! MOVE
+#include "ns3/ForwardNs3Ipv4ManagerF2c.h"   //does not need to be in ns3!! MOVE
 #endif
 
 UtilityGenerator::UtilityGenerator ()
@@ -225,6 +226,11 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
   {
     return new ForwardNs3Ipv4ManagerF2B (config);
   }
+  else if (!name.compare (ForwardNs3Ipv4ManagerF2C::IdName ()))
+  {
+    return new ForwardNs3Ipv4ManagerF2C (config);
+  }
+
 #endif
   else
   {
