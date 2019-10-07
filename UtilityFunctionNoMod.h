@@ -469,6 +469,48 @@ private:
    dataNameType_t m_lastElementSeen;
    bool m_lastElemValid;
 };
+
+//////////////
+class UtilityLastSeen : public UtilityHandlerBase
+{
+public:
+  UtilityLastSeen ();
+  UtilityLastSeen (ConfigWrapper & xmlConfig);
+  ~UtilityLastSeen ();
+
+  virtual void Config (ConfigWrapper & xmlConfig);
+
+  virtual void OnPktIngress (PktType & data);   //Rx
+  //virtual void Print(std::ostream & os, const AcclContentName & name, double &value)  const;
+
+  virtual void Compute();
+  virtual void Compute(const AcclContentName &name);
+  
+  static const dataNameType_t & IdName (void)
+  {
+    static const dataNameType_t idName ("LASTSEEN");
+    return idName;
+  }
+
+  //call Compute before Value, in case need to adjust values in relation to itself
+  //virtual void Compute (const AcclContentName & name);
+  //virtual void Compute ();
+
+  virtual bool OnInit (UtilityExternalModule *);
+
+  virtual double Value (const AcclContentName & name) const;
+
+  virtual uint64_t EstMemoryUsed (void) const;
+
+  virtual void DoDelete (const AcclContentName & name);
+
+
+protected:
+  class StorageClass < AcclContentName, LruData > *m_scratchpad;
+  class Normalize<LruData> *m_normalize;
+
+};
+
 //TODO FIXME not tested or implemented JLM
 class UtilityRegexMatch:public UtilityHandlerBase
 {

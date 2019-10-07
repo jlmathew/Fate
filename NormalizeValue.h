@@ -84,6 +84,7 @@ public:
   {
   }
 
+  virtual void Clear() {}
   virtual bool DeleteValue(T a)
   {
     return true;
@@ -116,6 +117,7 @@ public:
     m_values.clear();
   }
 
+  void Clear() { m_values.clear(); }
   void Config(ConfigWrapper &config) {
     Normalize<T>::Config(config);
   }

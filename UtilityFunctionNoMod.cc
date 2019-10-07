@@ -1011,6 +1011,7 @@ void UtilityU64ValuationEval::Config (ConfigWrapper & config) {
   m_scratchpad->setStorageType (m_storageMethod);
 
 }
+
 double  UtilityU64ValuationEval::Value (const AcclContentName & name) const {
   uint64_t retValue;
   bool exist = m_scratchpad->ExistData (name, retValue);
@@ -1143,6 +1144,161 @@ UtilityProtLastElement::EstMemoryUsed (void)
   return m_lastElementSeen.size();                    
 }
 
+
+//LASTSEEN, rank between now-lasttimeseen
+UtilityLastSeen::UtilityLastSeen ()
+  : m_normalize(nullptr)
+{
+}
+
+UtilityLastSeen::UtilityLastSeen (ConfigWrapper & xmlConfig)
+  : m_normalize(nullptr)
+{
+
+  Config (xmlConfig);
+
+}
+
+UtilityLastSeen::~UtilityLastSeen ()
+{ if (m_scratchpad)
+    delete m_scratchpad;
+  if (m_normalize)
+    delete m_normalize;
+
+}
+
+void
+UtilityLastSeen::Config (ConfigWrapper & xmlConfig)
+{
+  UtilityHandlerBase::Config(xmlConfig);
+  if (!m_useAlias)
+  {
+    m_name = IdName ();
+  }
+  ConfigWrapper *normConfig = xmlConfig.GetFirstChildUtility("Normalize");
+  if (normConfig->valid()) {
+    m_normalize = NormalizeGenerator<LruData>::CreateNewNormalizeEval(*normConfig);
+    std::stringstream ss;
+    m_normalize->Print(ss);
+    m_name.append(ss.str());
+  }
+
+  //JLM FIXME TODO, put in default
+  m_scratchpad = new StorageClass < AcclContentName, LruData >;
+  m_scratchpad->setStorageType (m_storageMethod);
+}
+
+void
+UtilityLastSeen::DoDelete (const AcclContentName & name)
+{
+  LruData retValue;
+  bool exist = m_scratchpad->ExistData (name, retValue);
+  if (exist) {
+    m_scratchpad->EraseData(name);
+    if (m_normalize) {
+      m_normalize->DeleteValue(retValue);
+    }
+  }
+}
+
+
+
+void
+UtilityLastSeen::OnPktIngress (PktType & data)
+{
+  if (!((m_createEntryMask | m_updateEntryMask) & data.GetPacketPurpose ()))
+  {
+    return;
+  }
+
+  timer_struct_t timeStamp = m_externalModule->GetGlobalModule ()->GetGlobalTimer ()->GetTime ();
+
+
+  LruData lruData, lruData2;
+  const AcclContentName name = data.GetAcclName ();
+
+  //bool valid = data.GetName(name).GetFullName();
+  lruData.m_objectTimestamp = timeStamp;
+
+  m_scratchpad->SetData (name, lruData);
+/*  bool dataExists= (m_scratchpad->ExistData (name, lruData2));
+  if (m_createEntryMask & data.GetPacketPurpose ())
+  {
+    if (dataExists) {
+      m_normalize->DeleteValue(lruData2);
+    }
+    m_scratchpad->SetData (name, lruData);
+    m_normalize->InsertValue(lruData);
+    //update for interest pkts, only if the data exists
+  }
+  else if (dataExists)
+  {
+    m_normalize->DeleteValue(lruData2);
+    m_scratchpad->SetData (name, lruData);
+    m_normalize->InsertValue(lruData);
+  }
+  */
+}
+
+
+bool
+UtilityLastSeen::OnInit (UtilityExternalModule * outsideData)
+{
+  m_externalModule = outsideData;
+  bool status = true;
+  if (m_externalModule == NULL) {
+    status = false;
+  } else  if (m_externalModule->GetGlobalModule () == NULL) {
+    status = false;
+  } else  if (m_externalModule->GetGlobalModule ()->GetGlobalTimer () == NULL) {
+    status = false;
+  }
+  if (!status) {
+    throw std::invalid_argument("Timer not specified in OnInit!");
+  }
+  return status;
+}
+
+void UtilityLastSeen::Compute(const AcclContentName & name) {
+	Compute();
+}
+
+void UtilityLastSeen::Compute() {
+  const std::map < AcclContentName, LruData > *map = nullptr;
+  map = m_scratchpad->GetDataAsMap();
+  m_normalize->Clear();
+  for (auto i= map->begin(); i != map->end(); i++)
+  {
+     m_normalize->InsertValue(i->second);
+  }
+
+}
+
+
+double
+UtilityLastSeen::Value (const AcclContentName & name) const
+{
+  LruData lruData, existData;
+  double retVal = -1.0;
+  bool exist = m_scratchpad->ExistData (name, existData);
+  if (exist) {
+    double val =  m_normalize->EvaluateValue(existData);
+    retVal = val;
+  } else { //data not found!
+    retVal = m_defaultValue;
+  }
+
+ std::cout << name << " LastSeen value[" << existData << "] is " << retVal << "\n";
+
+  return retVal;
+}
+
+
+uint64_t
+UtilityLastSeen::EstMemoryUsed (void) const
+{
+  return m_scratchpad->size ();    // * (sizeof(LruData) + 30 ); //EstMemoryUsed();
+}
 
 //match name
 //Change match value to regex match value
