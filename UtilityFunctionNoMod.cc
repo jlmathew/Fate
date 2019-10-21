@@ -32,6 +32,7 @@ SOFTWARE.
 #include "UtilityFunctionNoMod.h"
 #include "RangeData.h"
 #include "UtilityFunctionGenerator.h"
+#include <algorithm>
 
 //LFU
 UtilityLfu::UtilityLfu ()
@@ -694,9 +695,10 @@ double
 UtilityHashModulus::Value (const AcclContentName & name) const
 {
 
-  uint64_t value;
+  uint32_t value;
   if (!m_hashType.compare("fullname")) {
-    value = makeHash ((name.c_str()), name.size ());  //FIXME should be mapped, since aclname can be an integer
+    //value = makeHash ((name.c_str()), name.size ());  //FIXME should be mapped, since aclname can be an integer
+    value=std::hash<std::string>{}(name);
   }
   else
   {
@@ -705,8 +707,10 @@ UtilityHashModulus::Value (const AcclContentName & name) const
 
 
   //std::cout << value << "%" << m_modValue;
+uint32_t oldValue=value;
   value %= m_modValue;
   //std::cout << " = " << value << "\n";
+  std::cout << name << " original hash:" << oldValue << ", to " << value << " [" << m_modMatchLow << "," << m_modMatchHigh << "]=" << (double) ((value >= m_modMatchLow) && (value <= m_modMatchHigh)) << "\n";
   return (double) ((value >= m_modMatchLow) && (value <= m_modMatchHigh));
 
 }
@@ -720,7 +724,7 @@ uint64_t UtilityHashModulus::EstMemoryUsed ()
 uint64_t
 UtilityHashModulus::makeHash (const char *hash, uint32_t hashLength) const
 {
-  //simple hash
+  /*//simple hash
   uint64_t qHash = 0;
   uint64_t oHash;
   uint32_t start = 0;
@@ -739,7 +743,9 @@ UtilityHashModulus::makeHash (const char *hash, uint32_t hashLength) const
   }
 
   return qHash;
-
+  */
+	assert(0);
+  return 0;
 }
 
 

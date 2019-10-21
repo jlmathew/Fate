@@ -112,6 +112,8 @@ CacheBasicManager::Config(ConfigWrapper & config) {
       m_contentType = IcnDefault;
   }
   m_lowerCacheWatermark = config.GetAttribute("cacheLowerWaterMark", m_storageLimit);
+
+  
 }
 
 void
