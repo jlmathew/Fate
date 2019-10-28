@@ -243,7 +243,7 @@ UtilityCnt::OnPktIngress (PktType & data)
     {
       return;
     }
-  uint64_t value=0;
+  uint64_t value=m_startCount;
   bool countExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
   if (countExists) {
      Condition(value);
@@ -251,11 +251,10 @@ UtilityCnt::OnPktIngress (PktType & data)
       //data.SetUnsignedNamedAttribute(m_defaultAttribute, value); //dont write if criteria is met, otherwise it may go out of bounds!
       m_scratchpad->SetData (data.GetAcclName (), true);
      } else {
-      data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
+      //data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
       m_scratchpad->SetData (data.GetAcclName (), false);
      }
-  } else if (m_startCount) {
-     data.SetUnsignedNamedAttribute(m_defaultAttribute, m_startCount);
+     data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
   }
 
 }
