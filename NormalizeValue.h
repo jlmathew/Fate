@@ -61,7 +61,7 @@ template<class T>
 class Normalize
 {
 public:
-  Normalize() { 
+  Normalize(): m_divisor(1) { 
   
     if (std::is_floating_point<T>::value)
        { m_retMinType= std::nextafter(0.0,1.0); }
@@ -79,7 +79,10 @@ public:
   virtual void Print(std::ostream &os) const {
     os << "_N_";
   }
-  virtual void Config(ConfigWrapper &config) {}
+  virtual void Config(ConfigWrapper &config) {
+     m_divisor = config.GetAttribute("divisor", m_divisor);
+
+  }
   virtual void InsertValue(T a)
   {
   }
@@ -101,6 +104,7 @@ public:
   }
   protected:
   double m_retMinType;
+  uint64_t m_divisor;
 
 };
 
@@ -238,11 +242,14 @@ public:
     T min = *(this->m_values).cbegin(); //need something better?
     if (m_bias) {
         //ret = 1.0/(val-min+Normalize<T>::m_retMinType);
-        ret = 1.0/(val-min+this->m_retMinType);
+        //ret = 1.0/(val-min+this->m_retMinType);
+        ret = (double) this->m_divisor/(val-min+this->m_retMinType);
         //ret = 1.0/(val-min+1.0);
     } else {
       if (val != 0.0) {
-	ret = 1.0/val;
+	ret = (double) this->m_divisor/val;
+         if (ret > 1.0) { ret = 1.0; }
+	//ret = 1.0/val;
       } else { ret = 1.0; }
     }
     if (m_invert) {

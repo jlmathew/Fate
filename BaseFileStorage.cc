@@ -102,8 +102,8 @@ bool BaseFileStorage::DeleteFile(const dataNameType_t &name) {
   if (it != m_fileMap.end()) {
     delete [](it->second->buffer);
     delete [](it->second->validBytes);
-    m_fileMap.erase(it);
     m_totalBytes -= (it->second->size);
+    m_fileMap.erase(it);
     return true;
   }
   return false;

@@ -436,6 +436,7 @@ private:
   class StorageClass < dataNameType_t, uint64_t >*m_scratchpad;
   class Normalize<uint64_t> *m_normalize;
   bool m_temp;
+  uint64_t m_divisor;
 
 };
 
@@ -542,20 +543,26 @@ private:
      specifierName,
      fullName,
      fieldNameTemp,
-     filedNamePerm,
+     fieldNamePerm,
      allFieldsTemp,
      allFieldsPerm,
      allFields,
-
   };
-
+  const std::string matchingTypeName [allFields] = {
+     "illegal",
+     "baseName",
+     "specifierName",
+     "fullName",
+     "fieldNameTemp",
+     "fieldNamePerm",
+     "allFieldsTemp",
+     "allFieldsPerm"
+  };
   std::string m_regPattern;
   matchingType_t m_matchTypeEnum;
-  std::string m_regMatch;
-  std::string m_matchType;
+  std::string m_matchName;
   std::regex m_regexPat;
   class StorageClass < AcclContentName, bool > *m_scratchpad;
-  std::string m_optionMatch;
 };
 
 /*

@@ -333,34 +333,41 @@ void CacheBasicManager::PurgeBytesContent(PktType &pkt)
   }
 
   //dont purge if already in cache
-  if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
-
-
-  uint64_t totalSize=0;
-  pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
-  if ( (m_fileStore.GetTotalBytesUsed()-(m_protectInsert)*totalSize) > (m_storageLimit)) {
-    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
-    //Compute();
-    CacheDataHandler(pkt, PktList);
-    GetObsoleteList(PktList, obsoletePktList);
-    if (obsoletePktList.size()) {
-      LocalStoreDelete(obsoletePktList, true);
-    }
-    //Delete extra up to lower watermark
-    while (( m_fileStore.GetTotalBytesUsed()-m_protectInsert*totalSize) > (m_storageLimit) && PktList.size()) {
-      auto first = PktList.begin();
-      auto last = first;
-      ++last;
-      std::list < std::pair < double, AcclContentName> > PktListWm (first, last);
-      PktList.erase(first);
-      LocalStoreDelete(PktListWm, true);
-    }
-  } else {  //room in cache
+  //if ( m_PktNames.find(pkt.GetAcclName()) != m_PktNames.end()) { return; }
     m_cacheStore->SetData(pkt.GetAcclName(), pkt);
     m_PktNames.insert(pkt.GetAcclName());
 
 
-  }
+  uint64_t totalSize=0;
+  bool valid=pkt.GetUnsignedNamedAttribute("TotalSize", totalSize);
+  if (!valid) { return;}
+  if ( (m_fileStore.GetTotalBytesUsed()-totalSize) > (m_storageLimit)) {
+    std::list < std::pair < double, AcclContentName> > PktList, obsoletePktList;
+    //Compute();
+    CacheDataHandler(pkt, PktList);
+    GetObsoleteList(PktList, obsoletePktList);
+for(auto it=PktList.begin(); it!=PktList.end(); ++it)
+{
+    std::cout << "CACHED: " << it->second << " = " << it->first << "\n";
+}
+    if (obsoletePktList.size()) {
+      LocalStoreDelete(obsoletePktList, true);
+    }
+    //Delete extra up to lower watermark
+assert(m_storageLimit > totalSize);  //FIXME TODO
+    while (( m_fileStore.GetTotalBytesUsed()-totalSize) >= (m_storageLimit) && PktList.size()) {
+      auto first = PktList.begin();
+      auto last = first;
+      ++last;
+      std::list < std::pair < double, AcclContentName> > PktListWm (first, last);
+std::cout << "PURGE: Store size is " << ( m_fileStore.GetTotalBytesUsed()-m_protectInsert*totalSize) << "/" << m_storageLimit << ", erase " << first->second << " value of " << first->first << "\n";
+      PktList.erase(first);
+      LocalStoreDelete(PktListWm, true);
+    }
+  }// else {  //room in cache
+
+
+  //}
 
 }
 
@@ -610,7 +617,7 @@ void
 CacheBasicManager::StoreActionsDone(const std::list < StoreEvents > &list) {
 }
 
-  void CacheBasicManager::DumpStore (std::ostream &os) {
+void CacheBasicManager::DumpStore (std::ostream &os) {
      for(auto it =m_PktNames.begin(); it != m_PktNames.end(); it++) {
          double a = Value(*it);
 	 os << "[" << *it << "," << a << "]\n"; 

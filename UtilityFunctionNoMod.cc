@@ -1309,6 +1309,7 @@ UtilityLastSeen::EstMemoryUsed (void) const
 //match name
 //Change match value to regex match value
 UtilityRegexMatch::UtilityRegexMatch ()
+ : m_matchTypeEnum(fieldNamePerm)
 {
 }
 UtilityRegexMatch::UtilityRegexMatch(ConfigWrapper & config)
@@ -1331,37 +1332,26 @@ UtilityRegexMatch::Config (ConfigWrapper & xmlConfig)
   {
     m_name = IdName ();
   }
-assert(0); //not ready yet
-  m_matchingField = xmlConfig.GetAttribute ("matchField", m_matchingField);
+//assert(0); //not ready yet
+  m_matchName = xmlConfig.GetAttribute ("matchFieldName", m_matchName);
 
   m_regPattern = xmlConfig.GetAttribute ("regexPattern", m_regPattern);
+  m_regexPat= std::regex (m_regPattern);
   //m_regexPat(m_regPattern);
-  m_regMatch = xmlConfig.GetAttribute ("regexValue", m_regMatch);
+  std::string m_regMatchType;
+  m_regMatchType = xmlConfig.GetAttribute ("matchType", m_regMatchType);
+//convert to matchingTypeName
 
   m_name.append ("_");
-  if (m_matchType == "name")
-  {
-    m_name.append ("N:");
-  }
-  else if (m_matchType == "option")
-  {
-    m_name.append ("O(");
-    m_name.append (m_optionMatch);
-    m_name.append(")");
-  }
-  else {
-    assert(0);
-  }
+  //if (m_matchType == "name")
+  //{
+    m_name.append ("N:"+matchingTypeName[m_matchTypeEnum]);
+  //}
+  // else {
+  //  assert(0);  //need more work to support name matches, etc
+  //}
 
-  //m_nameOption = "%";
-  /*std::ostringstream out;
-  out << m_modValue;
-  out << "%(";
-  out << m_modMatchLow;
-  out << ",";
-  out << m_modMatchHigh;
-  out << ")";*/
-  //m_name.append (out.str ());
+
   m_scratchpad = new StorageClass < AcclContentName, bool >;
   m_scratchpad->setStorageType (m_storageMethod);
 
@@ -1370,6 +1360,24 @@ assert(0); //not ready yet
 void
 UtilityRegexMatch::OnPktIngress (PktType & data)
 {
+
+  if (!((m_createEntryMask | m_updateEntryMask) & data.GetPacketPurpose ()))
+  {
+    return;
+  }
+
+  std::smatch sm;
+//only fields supported atm
+  std::string value;
+  bool exist = data.GetNamedAttribute( m_matchName, value, false); //only real fields for now 
+  bool match = false;
+  if (exist) 
+  {
+  //actual match
+   match =  std::regex_match( value, sm, m_regexPat); 
+  }
+  const AcclContentName name = data.GetAcclName ();
+  m_scratchpad->SetData (name, match);
  
 }
 
