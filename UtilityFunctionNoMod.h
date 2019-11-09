@@ -436,7 +436,7 @@ private:
   class StorageClass < dataNameType_t, uint64_t >*m_scratchpad;
   class Normalize<uint64_t> *m_normalize;
   bool m_temp;
-  uint64_t m_divisor;
+  uint64_t divisor;
 
 };
 

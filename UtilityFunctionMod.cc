@@ -214,7 +214,10 @@ UtilityCnt::Config (ConfigWrapper & xmlConfig)
       m_cntCondition = increment;
       m_name.append ("_i:");
     }
-  else if (!decayType.compare("none")) {} 
+  else if (!decayType.compare("none")) {
+      m_cntCondition = none;
+      m_name.append ("_n:");
+  } 
   else { //unknown
       assert(0);
     }
@@ -247,15 +250,18 @@ UtilityCnt::OnPktIngress (PktType & data)
   bool countExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value);
   if (countExists) {
      Condition(value);
+     data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
      if (m_validRange.IsInRange(value)) { //in not in range
       //data.SetUnsignedNamedAttribute(m_defaultAttribute, value); //dont write if criteria is met, otherwise it may go out of bounds!
       m_scratchpad->SetData (data.GetAcclName (), true);
      } else {
       //data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
       m_scratchpad->SetData (data.GetAcclName (), false);
-     }
-     data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
-  }
+     }      //data.SetUnsignedNamedAttribute(m_defaultAttribute, value);
+  } else { 
+      m_scratchpad->SetData (data.GetAcclName (), false);
+   }
+
 
 }
 
@@ -272,7 +278,6 @@ UtilityCnt::Value (const AcclContentName & name) const
       return m_defaultMissingReturnValue;
     }                      //send default value
 
-   //check if content is stale (not fresh)
   if (cntMet) {
       return 1.0;
   } else {

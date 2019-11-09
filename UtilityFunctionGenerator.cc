@@ -163,6 +163,10 @@ UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
   {
     return new UtilityLastSeen(config);
   }
+  else if (!name.compare(UtilityRegexMatch::IdName()))
+  {
+    return new UtilityRegexMatch(config);
+  }
 
   //no utilities found
   dataNameType_t errorStr = "Invalid Utility:";

@@ -971,13 +971,18 @@ UtilityU64ValuationEval::~UtilityU64ValuationEval() {
 }
 
 void UtilityU64ValuationEval::OnPktIngress (PktType &data) {
-  uint64_t value=0;
+  if (!((m_createEntryMask | m_updateEntryMask) & data.GetPacketPurpose ()))
+  {
+    return;
+  }
+  uint64_t value=1;
   AcclContentName name = data.GetAcclName ();
   bool attribExists = data.GetUnsignedNamedAttribute (m_defaultAttribute, value, m_temp);
 
   if (attribExists) {
     uint64_t retValue;
     bool exist = m_scratchpad->ExistData (name, retValue);
+std::cout << "U64Eval ONPKT " << name << " exists(" << exist << ") with field value of " << value << " and normalized value of " << m_normalize->DeleteValue(retValue) << "\n";
     if (exist) {
       m_normalize->DeleteValue(retValue);
     }
@@ -1021,6 +1026,7 @@ void UtilityU64ValuationEval::Config (ConfigWrapper & config) {
 double  UtilityU64ValuationEval::Value (const AcclContentName & name) const {
   uint64_t retValue;
   bool exist = m_scratchpad->ExistData (name, retValue);
+std::cout << "U64Evalvalue " << name << " exists(" << exist << ") with raw value of " << retValue << " and normalized value of " <<   m_normalize->EvaluateValue(retValue) << "\n";
   if (exist) {
     return m_normalize->EvaluateValue(retValue);
   } else { //data not found!
