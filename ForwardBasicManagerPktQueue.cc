@@ -30,7 +30,7 @@ SOFTWARE.
 */
 #include "ForwardBasicManagerPktQueue.h"
 
-/*
+
 ForwardBasicManagerPktQueue::ForwardBasicManagerPktQueue ()
 {
 }
@@ -55,14 +55,8 @@ ForwardBasicManagerPktQueue::Config (ConfigWrapper & config)
 //      m_name = IdName ();
 //    }
 }
-*/
-/*const std::string &
-ForwardBasicManagerPktQueue::Name () const 
-{
-  return m_name;
-}*/
 
-/*
+
 bool
 ForwardBasicManagerPktQueue::OnInit (UtilityExternalModule * module)
 {
@@ -84,7 +78,7 @@ ForwardBasicManagerPktQueue::AddConfig (UtilityHandlerBase * uc, uint16_t positi
   return false;
 }
 
-ForwardBasicManagerPktQueue::OnPktIngress (PktType & pkt)
+void ForwardBasicManagerPktQueue::OnPktIngress (PktType & pkt)
 {
   switch (pkt.GetPacketPurpose ())
     {
@@ -154,38 +148,33 @@ ForwardBasicManagerPktQueue::ForwardPkts(std::list < PktType > &pktList)
   
 }
 
-void
-ForwardBasicManagerPktQueue::OnDataInterestPktIngress (PktType & interest)
-{
-  ModuleManager::OnPktIngress (interest);       //let utilities judge it
-}
-
 
 void
 ForwardBasicManagerPktQueue::OnDataInterestPktIngress (PktType & interest)
 { 
+  ModuleManager::OnPktIngress (interest);       //let utilities judge it
     bool unicast = true; //need method to detect if multi/uni
    if (unicast) {
-      EnqueueUnicastPkt(interest);
+      //EnqueueUnicastPkt(interest);
    } else {
-      EnqueueMulticastPkt(interest);
+      //EnqueueMulticastPkt(interest);
    }
 }
 
-void EnqueueUnicastPkt(PktType &data) {
-    m_unicast_queue.pushback(data);
+void ForwardBasicManagerPktQueue::EnqueueUnicastPkt( PktType &data) {
+    /*m_unicast_queue.pushback(data);
     if (all interfaces are not busy)
- 	TxPkts();
+ 	TxPkts();*/
 
 }
-void EnqueueMulticastPkt(PktType &data) {
+void ForwardBasicManagerPktQueue::EnqueueMulticastPkt(PktType &data) {
     //need to pair with a list of destinations
-    m_multicast_queue.pushback(data);
+    //m_multicast_queue.pushback(data);
 }
 
 
 void
-ForwardBasicManagerPktQueue::PktSent(PktType &data, const PktTxStatus &status, uint32_t interface)
+ForwardBasicManagerPktQueue::PktSent(PktType &data, PktTxStatus &status, uint32_t interface)
 {
    TxPkts();
 }
@@ -195,7 +184,7 @@ void
 ForwardBasicManagerPktQueue::TxPkts ()
 {
 
-  m_node->notifyPkt(data, status);
+ /* m_node->notifyPkt(data, status);
   //evaluate packet type, evaluate and 'send' it to the wire
   for_each (list of interfaces)
 	  if interface is busy, continue //save processing
@@ -203,9 +192,10 @@ ForwardBasicManagerPktQueue::TxPkts ()
 	      getValuation; 
  		save highestest value : interface : neighbor pair IF meet minimum criteria
 
-   //napsack problem		       	
-  ModuleManager::OnPktEgress (data, status);    //let utilities judge it
+   //napsack problem	
+*/	       	
+ // ModuleManager::OnPktEgress (data, status);    //let utilities judge it
 
 }
-*/
+
 

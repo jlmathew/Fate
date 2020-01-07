@@ -1092,6 +1092,7 @@ void UtilityNormValuationEval::Config (ConfigWrapper & config) {
 double  UtilityNormValuationEval::Value (const AcclContentName & name) const {
   double retValue=0.0;
   bool exist = m_scratchpad->ExistData (name, retValue);
+std::cout << "NormVal:" << name << "(" << exist << ")," << retValue << "\n";
   if (exist) {
     return retValue;
   } else { //data not found!

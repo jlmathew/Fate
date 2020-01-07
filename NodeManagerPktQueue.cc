@@ -28,23 +28,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#include "NodeManager.h"
+#include "NodeManagerPktQueue.h"
 //#include "UtilityFunctionGenerator.h"
 
 
-NodeManager::NodeManager ()
+NodeManagerPktQueue::NodeManagerPktQueue ()
   : m_name("NoName")
 {
 }
 
-NodeManager::NodeManager (ConfigWrapper & config)
-  //:ModuleManager::ModuleManager(config)
+NodeManagerPktQueue::NodeManagerPktQueue (ConfigWrapper & config)
+  //:ModuleManagerPktQueue::ModuleManager(config)
    : m_name("NoName")
 {
   Config (config);
 }
 
-NodeManager::~NodeManager ()
+NodeManagerPktQueue::~NodeManagerPktQueue ()
 {
   if (!m_moduleEval.empty())
   {
@@ -69,9 +69,9 @@ NodeManager::~NodeManager ()
 }
 
   //bool
-  //NodeManager::AddConfig(ModuleManager *uc, uint16_t position) {}
+  //NodeManagerPktQueue::AddConfig(ModuleManager *uc, uint16_t position) {}
 bool
-NodeManager::OnInit (UtilityExternalModule * data)
+NodeManagerPktQueue::OnInit (UtilityExternalModule * data)
 {
   ModuleManager::OnInit(data);
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
@@ -94,7 +94,7 @@ NodeManager::OnInit (UtilityExternalModule * data)
   //default is no action
   //need to do it in order - fixme JLM
 void
-NodeManager::OnAsyncEvent (AsyncEvent & eventType)
+NodeManagerPktQueue::OnAsyncEvent (AsyncEvent & eventType)
 {
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
   while (it != m_moduleEval.end ())
@@ -106,7 +106,7 @@ NodeManager::OnAsyncEvent (AsyncEvent & eventType)
 }
 
 void
-NodeManager::Config (ConfigWrapper & config)
+NodeManagerPktQueue::Config (ConfigWrapper & config)
 {
     ModuleManager::Config(config);
   if (!m_useAlias)
@@ -151,13 +151,13 @@ NodeManager::Config (ConfigWrapper & config)
 }
 
 const std::string &
-NodeManager::Name () const
+NodeManagerPktQueue::Name () const
 {
   return m_name;
 }
 
 
-void NodeManager::OnPktIngress (PktType & interest)
+void NodeManagerPktQueue::OnPktIngress (PktType & interest)
 {
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
   while (it != m_moduleEval.end ())
@@ -165,10 +165,17 @@ void NodeManager::OnPktIngress (PktType & interest)
       (*it)->OnPktIngress (interest);
       it++;
     }
+    //loop for all stores
+    std::vector < StoreManager *>::const_iterator store_it = m_StoreArr.begin();
+    while (store_it != m_StoreArr.end())
+    {
+	(*store_it)->OnPktIngress(interest);	
+	store_it++;
+    }
 }                               //Rx
 
 void
-NodeManager::OnPktEgress (PktType & data, const PktTxStatus & status)
+NodeManagerPktQueue::OnPktEgress (PktType & data, const PktTxStatus & status)
 {
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
   while (it != m_moduleEval.end ())
@@ -179,7 +186,7 @@ NodeManager::OnPktEgress (PktType & data, const PktTxStatus & status)
 }                               //Rx
 
 void
-     NodeManager::Print (std::ostream & os) const
+     NodeManagerPktQueue::Print (std::ostream & os) const
      {
        os << "Node:" << m_name << "\n";
        std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
@@ -196,7 +203,7 @@ void
      }
 
 void
-NodeManager::DumpAll(std::ostream &os) const
+NodeManagerPktQueue::DumpAll(std::ostream &os) const
 {
   
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
@@ -207,7 +214,7 @@ NodeManager::DumpAll(std::ostream &os) const
     }
 }
 void
-     NodeManager::Print (std::ostream & os, const AcclContentName & Name, double &value) const
+     NodeManagerPktQueue::Print (std::ostream & os, const AcclContentName & Name, double &value) const
      {
        std::vector < ModuleManager * >::const_iterator it = m_moduleEval.end ();
        --it;
@@ -219,7 +226,7 @@ void
      }
 
 void
-NodeManager::Compute ()
+NodeManagerPktQueue::Compute ()
 {
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
   while (it != m_moduleEval.end ())
@@ -230,7 +237,7 @@ NodeManager::Compute ()
 }
 
 void
-NodeManager::Compute (const AcclContentName & name)
+NodeManagerPktQueue::Compute (const AcclContentName & name)
 {
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
   while (it != m_moduleEval.end ())
@@ -241,7 +248,7 @@ NodeManager::Compute (const AcclContentName & name)
 }
 
 bool
-NodeManager::SelfTest() 
+NodeManagerPktQueue::SelfTest() 
 {
   bool ret=true;
   std::vector < ModuleManager * >::const_iterator it = m_moduleEval.begin ();
@@ -254,13 +261,13 @@ NodeManager::SelfTest()
 }
 
 ModuleManager *
-NodeManager::GetModule (uint32_t index)
+NodeManagerPktQueue::GetModule (uint32_t index)
 {
   return m_moduleEval[index];
 }
 
 ModuleManager *
-NodeManager::GetModule (const dataNameType_t & name)
+NodeManagerPktQueue::GetModule (const dataNameType_t & name)
 {
   uint32_t index = m_modulePriority[name];
 
@@ -268,13 +275,13 @@ NodeManager::GetModule (const dataNameType_t & name)
 }
 
 bool
-NodeManager::RemoveModule (uint32_t index)
+NodeManagerPktQueue::RemoveModule (uint32_t index)
 {
   return false;                 //m_moduleEval[index];
 }
 
 bool
-NodeManager::RemoveModule (const dataNameType_t & name)
+NodeManagerPktQueue::RemoveModule (const dataNameType_t & name)
 {
   //uint32_t index = m_modulePriority[name];
 
@@ -283,7 +290,7 @@ NodeManager::RemoveModule (const dataNameType_t & name)
 
 //FIXME TODO need to associate name ...
 void
-NodeManager::SetModule (ModuleManager * module, uint32_t order)
+NodeManagerPktQueue::SetModule (ModuleManager * module, uint32_t order)
 {
   //m_moduleEval.push_back(module); //we need to order it
   m_moduleEval.push_back (module);
@@ -295,13 +302,13 @@ NodeManager::SetModule (ModuleManager * module, uint32_t order)
 
 //FIXME TODO check if names exist, dont want to create false entries
 uint32_t
-NodeManager::retNumModules ()
+NodeManagerPktQueue::retNumModules ()
 {
   return m_moduleEval.size ();
 }
 
 StoreManager *
-NodeManager::GetStore (const dataNameType_t & name)
+NodeManagerPktQueue::GetStore (const dataNameType_t & name)
 {
   uint32_t index = m_StoreNames[name];
 
@@ -309,27 +316,27 @@ NodeManager::GetStore (const dataNameType_t & name)
 }
 
 StoreManager *
-NodeManager::GetStore (uint32_t index)
+NodeManagerPktQueue::GetStore (uint32_t index)
 {
   return m_StoreArr[index];
 }
 
 bool
-NodeManager::RemoveStore (const dataNameType_t & name)
+NodeManagerPktQueue::RemoveStore (const dataNameType_t & name)
 {
   assert (0);
   return false;
 }
 
 bool
-NodeManager::RemoveStore (uint32_t index)
+NodeManagerPktQueue::RemoveStore (uint32_t index)
 {
   assert (0);
   return false;
 }
 
 void
-NodeManager::SetStore (StoreManager * store, uint32_t order)
+NodeManagerPktQueue::SetStore (StoreManager * store, uint32_t order)
 {
   m_StoreArr.push_back (store);
   std::string name = store->Name ();
@@ -337,7 +344,7 @@ NodeManager::SetStore (StoreManager * store, uint32_t order)
 
 }
 
-uint32_t NodeManager::retNumStores ()
+uint32_t NodeManagerPktQueue::retNumStores ()
 {
   return m_StoreArr.size ();
 }

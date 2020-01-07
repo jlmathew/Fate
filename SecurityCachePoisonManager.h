@@ -28,6 +28,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+#ifndef __SECURITYCACHEPOISONMANGER_
+#define __SECURITYCACHEPOISONMANGER_
 #include "ModuleManager.h"
 #include <set>
 
@@ -72,7 +74,10 @@ private:
   std::string m_statsNumIntRespPkt; 
   std::string m_statsNumCtrlPkt; 
   std::string m_statsNumDebugPkt; 
+  std::string m_statsNumUnreqData; 
   double m_dropValue;
   //record seen interests
   std::set< std::string> m_seenInterestsBefore; 
 };
+
+#endif

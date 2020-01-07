@@ -114,6 +114,53 @@ public:
   virtual ~ TypicalCacheStore ()
   {
   }
+
+/* void
+OnPktIngress (PktType & pkt)
+{
+   if (pkt.GetPacketPurpose() & PktType::CONTROLPKT)
+   {
+        std::string key,  name;
+	std::string value;
+//match store name
+       bool bname = pkt.GetNamedAttribute("Name", name);
+std::cout << "Looking for store " << name << ", at store " << m_name << "\n";
+       if (bname && name==m_name) {
+         bool bkey = pkt.GetNamedAttribute("Key", key);
+         bool bvalue = pkt.GetUnsignedNamedAttribute("value", value);
+         uint64_t ddata=0;
+//note hardcoded to double for now, should cover 'most' requirements, need to make more flexible
+         std::list<std::string,double> tlist;
+         if (bkey && bvalue) {
+                //read map first, then update
+
+                std::size_t pos = key.find(";");
+                if (pos != std::string::npos)
+		{
+		  std::string key1=key.substr(0,pos);
+                  key = key.substr(pos+1);
+
+                  std::size_t dpos = value.find(";");
+                  if (dpos != std::string::npos) {
+			std::string ddata=value.substr(0,pos);
+			value = value.substr(pos+1);
+                        std::cout << "store key:" << key1 "," << value << "\n";
+                        double dvalue = ::atof(value.c_str());
+                        tlist.push_back(std::make_pair(key1,dvalue);
+		  }
+		  } else { bkey=false; } //mismatch string to data
+		} else { bkey = false; }
+
+                //assume ';' breaks each key/value
+                //SetData(key,data)
+                //ExistData()
+                //EraseData()
+                //SetDataAsList
+		//StorageClass<AcclContentName, PktType>::SetDataAsList();
+       }
+     }
+   } 
+}    */                
   void Config (ConfigWrapper & config)
   {
     StoreManager::Config (config);
@@ -125,8 +172,6 @@ public:
 
     return idName;
   }
-
-
 
 };
 

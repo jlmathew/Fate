@@ -28,8 +28,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef SECURITYCACHEPOISONMANAGER_H_
-#define SECURITYCACHEPOISONMANAGER_H_
 #include "SecurityCachePoisonManager.h"
 
 
@@ -69,6 +67,7 @@ SecurityCachePoisonManager::OnInit (UtilityExternalModule * module)
 {
   bool status = ModuleManager::OnInit (module);
   m_statsNumDataPkt= createHeirarchicalStatName("NumIngressDataPkts");
+  m_statsNumUnreqData = createHeirarchicalStatName("NumIngressUnrequestedDataPkts");
   m_statsNumIntPkt= createHeirarchicalStatName("NumIngressIntrestPkts");
   m_statsNumIntRespPkt= createHeirarchicalStatName("NumIngressIntrestRespPkts");
   m_statsNumCtrlPkt= createHeirarchicalStatName("NumIngressCtrlPkts");
@@ -78,6 +77,7 @@ SecurityCachePoisonManager::OnInit (UtilityExternalModule * module)
   m_stats->SetStats(m_statsNumIntRespPkt,(uint64_t) 0);
   m_stats->SetStats(m_statsNumCtrlPkt,(uint64_t) 0);
   m_stats->SetStats(m_statsNumDebugPkt,(uint64_t) 0);
+  m_stats->SetStats(m_statsNumUnreqData, (uint64_t) 0);
   return status;
 }
 bool
@@ -134,10 +134,19 @@ SecurityCachePoisonManager::OnControlPktIngress (PktType & control)
 
 
 void
-SecurityCachePoisonManager::OnDataPktIngress (PktType & interest)
+SecurityCachePoisonManager::OnDataPktIngress (PktType & data)
 {
-  ModuleManager::OnPktIngress (interest);       //let utilities judge it
-
+  ModuleManager::OnPktIngress (data);       //let utilities judge it
+  auto it = m_seenInterestsBefore.find(data.GetAcclName());
+   //use hardcoded names, for now FIXME TODO (should be read from xml)
+   if (it == m_seenInterestsBefore.end()) { //no seen
+std::cout << "Data NOT seen with prior Interest request:" << data.GetAcclName() << "\n";
+          data.SetNamedAttribute("SecurityEval", 0.3, true);
+          m_stats->IncStats(m_statsNumUnreqData);
+   } else {
+std::cout << "Data seen with prior Interest request:" << data.GetAcclName() << "\n";
+          data.SetNamedAttribute("SecurityEval", 1.0, true);
+   }
 
 }
 void
@@ -145,22 +154,14 @@ SecurityCachePoisonManager::OnInterestPktIngress (PktType & interest)
 {
   ModuleManager::OnPktIngress (interest);       //let utilities judge it
   m_seenInterestsBefore.insert(interest.GetAcclName()); //for now we dont worry about cleaning up the size, assume millions
+std::cout << "Interest seen with prior Interest request:" << interest.GetAcclName() << "\n";
+          interest.SetNamedAttribute("SecurityEval", 1.0, true);
 }
 
 void
 SecurityCachePoisonManager::OnPktEgress (PktType & data, const PktTxStatus & status)
 {
-  
   ModuleManager::OnPktEgress (data, status);    //let utilities judge it
-  //modify utility to say 'not seen' or 'seen'
-  auto it = m_seenInterestsBefore.find(data.GetAcclName());
-  //use hardcoded names, for now FIXME TODO (should be read from xml)
-  if (it == m_seenInterestsBefore.end()) { //no seen
-	 data.SetNamedAttribute("SecurityEval", 0.3, true);
-  } else {
-	 data.SetNamedAttribute("SecurityEval", 1.0, true);
-  }
 }
 
 
-#endif

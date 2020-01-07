@@ -30,7 +30,7 @@ SOFTWARE.
 */
 #ifndef FORWARDMANAGERBASEPKTQUEUE_H_
 #define FORWARDMANAGERBASEPKTQUEUE_H_
-/*
+
 #include "ModuleManager.h"
 #include <tuple>
 
@@ -49,7 +49,7 @@ public:
   virtual void ForwardPkts(std::list < PktType > &pktList);
    static const dataNameType_t & IdName (void)
   {
-    static const dataNameType_t idName ("ForwardBasicManager");
+    static const dataNameType_t idName ("ForwardBasicManagerPktQueue");
       return idName;
   }
    virtual bool OnInit (UtilityExternalModule *);
@@ -62,12 +62,13 @@ public:
   //default actions
   //
   //pkt actions
-  void EnqueueUnicastPkt(const PktType &pkt);
-  void EnqueueMulticastPkt(const PktType &pkt);
+  void EnqueueUnicastPkt(PktType &pkt);
+  void EnqueueMulticastPkt(PktType &pkt);
   
   void CallbackTxUnicast();
   void CallbackTxMulticast();
   void TxPkts();
+  void PktSent(PktType &data, PktTxStatus &status, uint32_t interface);
 private:
   //default actions
   void OnDataInterestPktIngress (PktType & interest);
@@ -85,5 +86,5 @@ private:
 
 
 };
-*/
+
 #endif

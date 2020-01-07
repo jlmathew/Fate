@@ -62,7 +62,7 @@ UtilityHandlerBase *
 UtilityGenerator::CreateNewUtility (ConfigWrapper & config)
 {
   dataNameType_t name = config.GetAttribute ("name", dataNameType_t (""));
-
+std::cout << "  Creating Utility:" << name << "\n";
   /*
   //delete me, only for compile
   #include <ostream>
@@ -180,6 +180,7 @@ ModuleManager *
 ModuleGenerator::CreateNewModule (ConfigWrapper & config)
 {
   dataNameType_t name = config.GetAttribute ("moduleName", dataNameType_t (""));
+std::cout << "Creating Module:" << name << "\n";
 
   //std::cout << "creating module:" << name << "\n";
   //start with Aggregate Utilities
@@ -201,7 +202,7 @@ ModuleGenerator::CreateNewModule (ConfigWrapper & config)
   }
   else if (!name.compare (SecurityCachePoisonManager::IdName ()))
   {
-    return new SecurityBasicManager (config);
+    return new SecurityCachePoisonManager (config);
   }
   else if (!name.compare (ForwardBasicManager::IdName ()))
   {
@@ -258,6 +259,7 @@ StoreGenerator::CreateNewStore (ConfigWrapper & config)
 {
   dataNameType_t name = config.GetAttribute ("storeName", dataNameType_t (""));
 
+std::cout << "Creating Store:" << name << "\n";
   //std::cout << "creating store:" << name << "\n";
   //start with Aggregate Utilities
   if (!name.compare (TypicalCacheStore::IdName ()))
