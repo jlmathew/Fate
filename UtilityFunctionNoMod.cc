@@ -412,7 +412,7 @@ UtilityLru::Value (const AcclContentName & name) const
     retVal = m_defaultValue;
   }
 
- std::cout << name << " lru value[" << existData << "] is " << retVal << "\n";
+ std::cout << name << " lru value[" << existData << "] is " << retVal << " ; store size " << m_scratchpad->size() << "\n";
 
   return retVal;
 }

@@ -93,6 +93,10 @@ std::cout << "  Creating Utility:" << name << "\n";
     return new UtilityStepFn (config);
     // special blocks, eg. Utility block
   }
+  else if (!name.compare (UtilityIfThenElse::IdName()))
+  {
+    return new UtilityIfThenElse(config);
+  }
   else if (!name.compare (UtilityBlock::IdName ()))
   {
     return new UtilityBlock (config);

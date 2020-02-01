@@ -111,6 +111,7 @@ protected:
   std::list < UtilityHandlerBase * >functionalFactors;
   virtual double FunctionValue (double param1) const;
   virtual double FunctionValue (double param1, double param2) const;
+  virtual double FunctionValue (double param1, double param2, double param3) const;
 
 
 };

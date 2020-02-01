@@ -510,7 +510,7 @@ void CacheBasicManager::CacheHdrHit(PktType & interest) {
     double value = Value(interest.GetAcclName());
 
 //non multiple packets fail with a value of 0, for some reason JLM FIXME TODO
-std::cout << interest.GetAcclName() << " has value of " << value << "\n";
+//std::cout << interest.GetAcclName() << " has value of " << value << "\n";
 
     if (value <= m_dropValue) {
       LOG("Cache Expired Hit %s\n", interest.GetName().GetFullName().c_str());

@@ -141,7 +141,7 @@ SecurityCachePoisonManager::OnDataPktIngress (PktType & data)
    //use hardcoded names, for now FIXME TODO (should be read from xml)
    if (it == m_seenInterestsBefore.end()) { //no seen
 std::cout << "Data NOT seen with prior Interest request:" << data.GetAcclName() << "\n";
-          data.SetNamedAttribute("SecurityEval", 0.3, true);
+          data.SetNamedAttribute("SecurityEval", 0.0, true);
           m_stats->IncStats(m_statsNumUnreqData);
    } else {
 std::cout << "Data seen with prior Interest request:" << data.GetAcclName() << "\n";

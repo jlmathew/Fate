@@ -362,33 +362,121 @@ UtilityMax::FunctionValue (double a1, double a2) const
     }
 }
 
-//add if/then/else
-//add switch/case
-/*UtilityIfThenElse::UtilityIfThenElse(ConfigWrapper &config):
-UtilityAggregateBase(config)
+double 
+UtilityIfThenElse::Value(const AcclContentName &name) const {
+
+      std::list < UtilityHandlerBase * >::const_iterator it = functionalFactors.begin ();
+
+       int end = functionalFactors.size ();
+      assert(end == 3);
+      double switchVal =  (*it++)->Value (name); 
+    
+//std::cout << "If_" << name << "_(" << switchVal << ")";    
+       double retValue=-1.0;
+       if (switchVal > 0.0) { 
+         retValue= (*it)->Value(name); 
+//std::cout << "Then (" << retValue << ")\n";
+        }
+        else { 
+	  it++;
+          retValue= (*it)->Value(name);
+//std::cout << "Else (" << retValue << ")\n";
+        }
+   return retValue;
+}
+void
+UtilityIfThenElse::OnPktIngress (PktType & pkt)
 {
-  std::string tmpName = IdName();
-  tmpName.append(m_name);
-  m_name = tmpeName;
+  std::list < UtilityHandlerBase * >::iterator it = functionalFactors.begin ();
+       int end = functionalFactors.size ();
+      assert(end == 3);
+     (*it)->OnPktIngress(pkt); //update the key, if necessary
+      //key determines which of the other 2 fields to update
+     double switchVal =  (*it++)->Value (pkt.GetAcclName()); 
+//std::cout << "If(" << switchVal << ")";    
+       if (switchVal > 0.0) { 
+          (*it)->OnPktIngress(pkt); 
+//std::cout << "Then ()\n";
+        }
+        else { 
+	  it++;
+          (*it)->OnPktIngress(pkt);
+//std::cout << "Else ()\n";
+       }
+
 }
 
-UtilityIfThenElse::~UtilityIfThenElse()
+UtilityIfThenElse::UtilityIfThenElse (ConfigWrapper & config):UtilityAggregateBase (config)
+{
+  if (!m_useAlias)
+    {
+      m_name = IdName ();
+    }
+
+}
+
+UtilityIfThenElse::~UtilityIfThenElse ()
 {
 }
 
+
+void
+UtilityIfThenElse::Print (std::ostream & os, bool endParen)  const
+{
+       if (!m_usePrettyPrint)
+         {
+           UtilityAggregateBase::Print (os);
+           return;
+         }
+
+       std::list < UtilityHandlerBase * >::const_iterator it = functionalFactors.begin ();
+
+       int end = functionalFactors.size ();
+       assert(end == 3);
+
+       os << "If(";  
+	(*it++)->Print (os);  
+	os << ")Then(";  
+	(*it++)->Print(os); 
+        os <<")Else("; 
+	(*it)->Print(os);
+        os <<")";
+
+}
+
+void
+UtilityIfThenElse::Print (std::ostream & os, const AcclContentName & Name, double &value) const
+{
+       if (!m_usePrettyPrint)
+         {
+           UtilityAggregateBase::Print (os);
+           return;
+         }
+
+       std::list < UtilityHandlerBase * >::const_iterator it = functionalFactors.begin ();
+
+       int end = functionalFactors.size ();
+      assert(end == 3);
+      double switchVal, childValue1, childValue2;
+       os << "If(" ; 
+ 	 (*it++)->Print (os,Name, switchVal); 
+	os << ")Then(";
+    
+       if (switchVal) { (*it++)->Print(os, Name, childValue1); os <<")Else()"; }
+       else { os << ")Else(";
+ 	  (*it)->Print(os, Name, childValue2);
+	  os <<")";
+        }
+       os << "=[";
+       double ress = switchVal ? childValue1 : childValue2;
+       os << ress << "])";
+
+
+}
 double
-UtilityIfThenElse::FunctionValue(double a1, double a2, double a3) const
-{
-   
-}
+     UtilityIfThenElse::FunctionValue (double a1, double a2, double a3) const
+     {
+       if (a1 > 0.0) return a2; 
+       return a3;
+     }
 
-double
-UtilityIfThenElse::FunctionValue(double, double a2) const
-{
-   
-  if (m_watermarkRange.IsInRange (a1))
-  {
-    return a2;
-  }
-}
-*/

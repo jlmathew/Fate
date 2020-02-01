@@ -295,3 +295,12 @@ double
        throw std::invalid_argument ("UtilityAggregateBase::FunctionValue should never be called");
          return 0.0;
      }                          //should never be called
+
+
+     double UtilityAggregateBase::FunctionValue (double param1, double param2, double param3) const
+     {
+         throw std::invalid_argument ("UtilityAggregateBase::FunctionValue should never be called");
+         return 0.0;
+     }                          //should never be called
+
+

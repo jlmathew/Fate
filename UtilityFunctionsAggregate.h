@@ -142,6 +142,31 @@ protected:
 
 
 };
+class UtilityIfThenElse:public UtilityAggregateBase
+{
+
+public:
+  UtilityIfThenElse (ConfigWrapper & config);
+
+  virtual ~ UtilityIfThenElse ();
+
+  virtual double Value(const AcclContentName &name) const;
+
+  virtual void OnPktIngress(PktType &pkt);
+
+  static const std::string & IdName (void)
+  {
+    static const std::string idName ("IFTHENELSE");
+      return idName;
+  }
+  void Print (std::ostream & os, const AcclContentName & tlvName, double &value) const;
+  void Print (std::ostream & os, bool endParen = true) const;
+
+protected:
+  virtual double FunctionValue (double a1, double a2, double a3) const;
+
+
+};
 
 class UtilityMult:public UtilityAggregateBase
 {

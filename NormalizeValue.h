@@ -395,6 +395,7 @@ public:
       for (auto i=this->m_values.crbegin(); i != this->m_values.crend(); i++) {
         if (val == *i) {
           retValue= (double) count/totalSize;
+//std::cout << "  normalized:" << count << "/" << totalSize << "\n";
           break;
         } else {
           --count;
